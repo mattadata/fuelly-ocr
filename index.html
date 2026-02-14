@@ -101,13 +101,18 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="config.js"></script>
   <script src="ocr.js"></script>
   <script src="app.js"></script>
   <script>
-    // Register service worker
+    // Register service worker and clear old caches
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then(function(registration) {
         console.log('ServiceWorker registered:', registration);
+        // Force the new service worker to activate immediately
+        if (registration.waiting) {
+          registration.waiting.postMessage({type: 'SKIP_WAITING'});
+        }
       }).catch(function(error) {
         console.log('ServiceWorker registration failed:', error);
       });

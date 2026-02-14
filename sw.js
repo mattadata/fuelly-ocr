@@ -10,6 +10,7 @@ const urlsToCache = [
   '/styles.css',
   '/app.js',
   '/ocr.js',
+  '/config.js',
   '/manifest.json',
   'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'
 ];
@@ -22,6 +23,7 @@ self.addEventListener('install', function(event) {
         return cache.addAll(urlsToCache);
       })
   );
+  self.skipWaiting();
 });
 
 // Fetch event - serve from cache, fallback to network
@@ -59,17 +61,16 @@ self.addEventListener('fetch', function(event) {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', function(event) {
-  const cacheWhitelist = [CACHE_NAME];
-
   event.waitUntil(
     caches.keys().then(function(cacheNames) {
       return Promise.all(
         cacheNames.map(function(cacheName) {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
+          if (cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
+  self.clients.claim();
 });
