@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Fuelly">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>Fuelly OCR</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <h1>Fuelly Fuel Up</h1>
+    </header>
+
+    <!-- View 1: Photo Capture -->
+    <div id="view-capture" class="view active">
+      <div class="photo-section">
+        <label>Gas Pump Photo</label>
+        <div class="photo-input" id="pump-photo-input">
+          <input type="file" id="pump-file" accept="image/*" capture="environment">
+          <div class="photo-placeholder">
+            <span class="icon">📷</span>
+            <span>Tap to capture pump display</span>
+          </div>
+          <img id="pump-preview" class="preview hidden" alt="Pump display preview">
+        </div>
+      </div>
+
+      <div class="photo-section">
+        <label>Odometer Photo</label>
+        <div class="photo-input" id="odometer-photo-input">
+          <input type="file" id="odometer-file" accept="image/*" capture="environment">
+          <div class="photo-placeholder">
+            <span class="icon">📷</span>
+            <span>Tap to capture odometer</span>
+          </div>
+          <img id="odometer-preview" class="preview hidden" alt="Odometer preview">
+        </div>
+      </div>
+
+      <button id="extract-btn" class="btn btn-primary" disabled>Extract Data</button>
+    </div>
+
+    <!-- View 2: Processing -->
+    <div id="view-processing" class="view hidden">
+      <div class="spinner"></div>
+      <p id="processing-status">Analyzing images...</p>
+    </div>
+
+    <!-- View 3: Review & Confirm -->
+    <div id="view-review" class="view hidden">
+      <div class="data-section">
+        <h2>Gas Pump Data</h2>
+        <div class="confidence-indicator" id="pump-confidence"></div>
+
+        <div class="field-group">
+          <label for="gallons">Gallons</label>
+          <input type="number" id="gallons" step="0.01" min="0" max="100">
+          <span class="confidence" id="gallons-confidence"></span>
+        </div>
+
+        <div class="field-group">
+          <label for="price">Price per Gallon ($)</label>
+          <input type="number" id="price" step="0.001" min="0" max="10">
+          <span class="confidence" id="price-confidence"></span>
+        </div>
+
+        <div class="field-group">
+          <label for="total">Total ($)</label>
+          <input type="number" id="total" step="0.01" min="0" max="500">
+          <span class="confidence" id="total-confidence"></span>
+        </div>
+      </div>
+
+      <div class="data-section">
+        <h2>Odometer Data</h2>
+        <div class="confidence-indicator" id="odometer-confidence"></div>
+
+        <div class="field-group">
+          <label for="miles">Miles</label>
+          <input type="number" id="miles" step="1" min="0">
+          <span class="confidence" id="miles-confidence"></span>
+        </div>
+      </div>
+
+      <button id="send-sms-btn" class="btn btn-primary">Send SMS to Fuelly</button>
+      <button id="back-btn" class="btn btn-secondary">Start Over</button>
+    </div>
+
+    <!-- Error Banner -->
+    <div id="error-banner" class="error-banner hidden">
+      <span id="error-message"></span>
+      <button id="dismiss-error" class="close-btn">×</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="ocr.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
