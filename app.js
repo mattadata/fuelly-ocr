@@ -312,13 +312,17 @@ const App = (function() {
         odometer: odometerData
       };
 
+      console.log('Extracted data:', pumpData, odometerData);
+
       // Validate that we got required data
       if (!pumpData.gallons.value || !odometerData.miles.value) {
+        console.log('Validation failed - gallons:', pumpData.gallons.value, 'miles:', odometerData.miles.value);
         showView('capture');
         showError('Could not extract all required data. Please try with clearer photos.');
         return;
       }
 
+      console.log('Validation passed, showing review view');
       // Populate and show review form
       populateReviewForm(pumpData, odometerData);
       showView('review');
@@ -533,6 +537,7 @@ const App = (function() {
    * Switch between views
    */
   function showView(viewName) {
+    console.log('showView called with:', viewName);
     // Hide all views
     Object.values(elements.views).forEach(view => {
       view.classList.remove('active');
@@ -541,9 +546,11 @@ const App = (function() {
 
     // Show requested view
     const targetView = elements.views[viewName];
+    console.log('Target view element:', targetView);
     if (targetView) {
       targetView.classList.remove('hidden');
       targetView.classList.add('active');
+      console.log('View switched to:', viewName);
     }
   }
 
