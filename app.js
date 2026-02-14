@@ -301,7 +301,7 @@ const App = (function() {
         })
       );
 
-      debugLog('OCR results received:', ocrResults.length);
+      console.log('OCR results received:', ocrResults.length);
 
       // Auto-detect which photo is pump vs odometer
       const { pumpData, odometerData } = detectAndParseData(ocrResults);
@@ -342,21 +342,21 @@ const App = (function() {
       const result = ocrResults[i];
       const text = result.text.toLowerCase();
 
-      debugLog('Photo ' + (i + 1) + ' contains:', text.substring(0, 100));
+      console.log('Photo ' + (i + 1) + ' contains:', text.substring(0, 100));
 
       // Check for pump indicators
       const hasGallons = text.includes('gallon') || text.includes('gal');
       const hasSale = text.includes('sale') || text.includes('$') || text.includes('price');
       const hasOdometer = text.includes('odometer') || text.includes('odo') || /\b\d{5,6}\b/.test(text);
 
-      debugLog('Photo ' + (i + 1) + ' - Gallons:', hasGallons, 'Sale:', hasSale, 'Odometer:', hasOdometer);
+      console.log('Photo ' + (i + 1) + ' - Gallons:', hasGallons, 'Sale:', hasSale, 'Odometer:', hasOdometer);
 
       if (hasGallons || hasSale) {
         // This is likely the pump
         const parsed = OCR.parsePumpData(result);
         if (parsed.gallons.value) {
           pumpData = parsed;
-          debugLog('Photo ' + (i + 1) + ' identified as PUMP');
+          console.log('Photo ' + (i + 1) + ' identified as PUMP');
         }
       }
 
@@ -365,14 +365,14 @@ const App = (function() {
         const parsed = OCR.parseOdometerData(result);
         if (parsed.miles.value) {
           odometerData = parsed;
-          debugLog('Photo ' + (i + 1) + ' identified as ODOMETER');
+          console.log('Photo ' + (i + 1) + ' identified as ODOMETER');
         }
       }
     }
 
     // If detection failed, use fallback: assign first result as pump, second as odometer
     if (!pumpData.gallons.value && !odometerData.miles.value) {
-      debugLog('Auto-detection failed, using fallback assignment');
+      console.log('Auto-detection failed, using fallback assignment');
 
       // Parse all results and see what we got
       const allPumpData = ocrResults.map(r => OCR.parsePumpData(r));
