@@ -126,8 +126,9 @@ const App = (function() {
    * Set up all event listeners
    */
   function setupEventListeners() {
-    // Photo upload - click on input area
-    elements.photosInput.addEventListener('click', function() {
+    // Photo upload - click on input area triggers hidden file input
+    elements.photosInput.addEventListener('click', function(e) {
+      e.preventDefault();
       elements.photosFile.click();
     });
 
