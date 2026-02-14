@@ -114,7 +114,6 @@ const OCR = (function() {
    */
   function parsePumpData(ocrResult) {
     const text = ocrResult.text;
-    const lines = ocrResult.lines.map(l => l.text).join(' ');
 
     let gallons = null;
     let gallonsConfidence = 0;
