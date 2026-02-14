@@ -15,6 +15,12 @@ const OCR = (function() {
    */
   function setApiKey(key) {
     apiKey = key;
+    // Save to localStorage as backup (for deployed version without config.js)
+    try {
+      localStorage.setItem('fuelly_google_vision_key', key);
+    } catch (e) {
+      // localStorage might not be available
+    }
   }
 
   /**

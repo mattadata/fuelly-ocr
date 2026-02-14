@@ -60,17 +60,13 @@ const App = (function() {
   function init() {
     cacheElements();
     setupEventListeners();
-    // Debug display removed for production
-    // setupDebugDisplay();
+    setupApiKeyPanel();
   }
 
   /**
-   * Set up debug display for OCR output (development only)
+   * Set up API key input panel
    */
-  function setupDebugDisplay() {
-    // Debug disabled for production
-    return;
-
+  function setupApiKeyPanel() {
     // Create settings container
     let settingsContainer = document.getElementById('settings-panel');
     if (!settingsContainer) {
@@ -78,10 +74,10 @@ const App = (function() {
       settingsContainer.id = 'settings-panel';
       settingsContainer.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 10000;';
       settingsContainer.innerHTML = `
-        <button id="settings-btn" style="background: #1a1a2e; color: white; border: 1px solid #444; padding: 8px 12px; border-radius: 4px; cursor: pointer;">⚙️ API Key</button>
-        <div id="api-key-panel" class="hidden" style="background: rgba(26,26,46,0.95); color: white; padding: 15px; border-radius: 8px; margin-top: 5px; min-width: 300px; border: 1px solid #444;">
+        <button id="settings-btn" style="background: #1a1a2e; color: white; border: 1px solid #444; padding: 8px 12px; border-radius: 4px; cursor: pointer;" title="API Settings">⚙️</button>
+        <div id="api-key-panel" class="hidden" style="background: rgba(26,26,46,0.95); color: white; padding: 15px; border-radius: 8px; margin-top: 5px; min-width: 280px; border: 1px solid #444;">
           <h3 style="margin: 0 0 10px 0; font-size: 14px;">Google Cloud Vision API</h3>
-          <p style="margin: 0 0 10px 0; font-size: 11px; opacity: 0.8;">Required for reading pump LCD displays. Get key from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color: #4CAF50;">Google Cloud Console</a></p>
+          <p style="margin: 0 0 10px 0; font-size: 11px; opacity: 0.8;">Required for reading pump LCD displays. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color: #4CAF50;">Get API Key</a></p>
           <input type="text" id="api-key-input" placeholder="Paste API key here..." style="width: 100%; padding: 8px; margin-bottom: 8px; border-radius: 4px; border: 1px solid #444; background: #2a2a3e; color: white; box-sizing: border-box;">
           <button id="save-key-btn" style="background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; width: 100%;">Save Key</button>
         </div>
@@ -89,9 +85,19 @@ const App = (function() {
       document.body.appendChild(settingsContainer);
 
       // Toggle panel
-      document.getElementById('settings-btn').addEventListener('click', function() {
+      document.getElementById('settings-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
         const panel = document.getElementById('api-key-panel');
         panel.classList.toggle('hidden');
+      });
+
+      // Close panel when clicking outside
+      document.addEventListener('click', function(e) {
+        const panel = document.getElementById('api-key-panel');
+        const btn = document.getElementById('settings-btn');
+        if (!panel.contains(e.target) && !btn.contains(e.target)) {
+          panel.classList.add('hidden');
+        }
       });
 
       // Save key
@@ -100,7 +106,6 @@ const App = (function() {
         if (key) {
           OCR.setApiKey(key);
           document.getElementById('api-key-panel').classList.add('hidden');
-          state.debugLog.push('API key saved!');
         }
       });
 
@@ -110,22 +115,6 @@ const App = (function() {
         document.getElementById('api-key-input').value = existingKey;
       }
     }
-
-    // Create debug container
-    let debugContainer = document.getElementById('debug-output');
-    if (!debugContainer) {
-      debugContainer = document.createElement('div');
-      debugContainer.id = 'debug-output';
-      debugContainer.style.cssText = 'position: fixed; bottom: 0; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.9); color: #0f0; font-family: monospace; font-size: 11px; padding: 10px; z-index: 9999; border-top: 2px solid #0f0;';
-      document.body.appendChild(debugContainer);
-    }
-
-    // Set up OCR debug callback
-    OCR.setDebugCallback(function(message) {
-      state.debugLog.push(message);
-      debugContainer.innerHTML = state.debugLog.map(m => `<div>${m}</div>`).join('');
-      debugContainer.scrollTop = debugContainer.scrollHeight;
-    });
   }
 
   /**
