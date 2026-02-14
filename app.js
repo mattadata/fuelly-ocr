@@ -314,16 +314,16 @@ const App = (function() {
 
       console.log('Extracted data:', pumpData, odometerData);
 
-      // Validate that we got required data
-      if (!pumpData.gallons.value || !odometerData.miles.value) {
-        console.log('Validation failed - gallons:', pumpData.gallons.value, 'miles:', odometerData.miles.value);
+      // Validate that we got at least some data
+      if (!pumpData.gallons.value && !odometerData.miles.value) {
+        console.log('No data extracted at all');
         showView('capture');
-        showError('Could not extract all required data. Please try with clearer photos.');
+        showError('Could not extract any data. Please try with clearer photos.');
         return;
       }
 
-      console.log('Validation passed, showing review view');
-      // Populate and show review form
+      console.log('Showing review view');
+      // Populate and show review form (even if partial data - user can fill in missing)
       populateReviewForm(pumpData, odometerData);
       showView('review');
 
