@@ -72,14 +72,14 @@ const App = (function() {
     if (!debugContainer) {
       debugContainer = document.createElement('div');
       debugContainer.id = 'debug-output';
-      debugContainer.style.cssText = 'position: fixed; bottom: 0; left: 0; right: 0; max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.9); color: #0f0; font-family: monospace; font-size: 10px; padding: 8px; z-index: 9999; border-top: 2px solid #0f0; word-break: break-word;';
+      debugContainer.style.cssText = 'position: fixed; bottom: 0; left: 0; right: 0; max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.9); color: #0f0; font-family: monospace; font-size: 9px; padding: 6px; z-index: 100; border-top: 2px solid #0f0; word-break: break-word; pointer-events: none;';
       document.body.appendChild(debugContainer);
     }
 
     // Set up OCR debug callback
     OCR.setDebugCallback(function(message) {
       state.debugLog.push(message);
-      debugContainer.innerHTML = state.debugLog.slice(-20).map(m => `<div style="margin: 2px 0;">${m}</div>`).join('');
+      debugContainer.innerHTML = state.debugLog.slice(-20).map(m => `<div style="margin: 1px 0;">${m}</div>`).join('');
       debugContainer.scrollTop = debugContainer.scrollHeight;
     });
   }
