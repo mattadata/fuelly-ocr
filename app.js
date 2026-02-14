@@ -60,61 +60,6 @@ const App = (function() {
   function init() {
     cacheElements();
     setupEventListeners();
-    setupApiKeyPanel();
-  }
-
-  /**
-   * Set up API key input panel
-   */
-  function setupApiKeyPanel() {
-    // Create settings container
-    let settingsContainer = document.getElementById('settings-panel');
-    if (!settingsContainer) {
-      settingsContainer = document.createElement('div');
-      settingsContainer.id = 'settings-panel';
-      settingsContainer.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 10000;';
-      settingsContainer.innerHTML = `
-        <button id="settings-btn" style="background: #1a1a2e; color: white; border: 1px solid #444; padding: 8px 12px; border-radius: 4px; cursor: pointer;" title="API Settings">⚙️</button>
-        <div id="api-key-panel" class="hidden" style="background: rgba(26,26,46,0.95); color: white; padding: 15px; border-radius: 8px; margin-top: 5px; min-width: 280px; border: 1px solid #444;">
-          <h3 style="margin: 0 0 10px 0; font-size: 14px;">Google Cloud Vision API</h3>
-          <p style="margin: 0 0 10px 0; font-size: 11px; opacity: 0.8;">Required for reading pump LCD displays. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color: #4CAF50;">Get API Key</a></p>
-          <input type="text" id="api-key-input" placeholder="Paste API key here..." style="width: 100%; padding: 8px; margin-bottom: 8px; border-radius: 4px; border: 1px solid #444; background: #2a2a3e; color: white; box-sizing: border-box;">
-          <button id="save-key-btn" style="background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; width: 100%;">Save Key</button>
-        </div>
-      `;
-      document.body.appendChild(settingsContainer);
-
-      // Toggle panel
-      document.getElementById('settings-btn').addEventListener('click', function(e) {
-        e.stopPropagation();
-        const panel = document.getElementById('api-key-panel');
-        panel.classList.toggle('hidden');
-      });
-
-      // Close panel when clicking outside
-      document.addEventListener('click', function(e) {
-        const panel = document.getElementById('api-key-panel');
-        const btn = document.getElementById('settings-btn');
-        if (!panel.contains(e.target) && !btn.contains(e.target)) {
-          panel.classList.add('hidden');
-        }
-      });
-
-      // Save key
-      document.getElementById('save-key-btn').addEventListener('click', function() {
-        const key = document.getElementById('api-key-input').value.trim();
-        if (key) {
-          OCR.setApiKey(key);
-          document.getElementById('api-key-panel').classList.add('hidden');
-        }
-      });
-
-      // Load existing key
-      const existingKey = OCR.getApiKey();
-      if (existingKey) {
-        document.getElementById('api-key-input').value = existingKey;
-      }
-    }
   }
 
   /**
