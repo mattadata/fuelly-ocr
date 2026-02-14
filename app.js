@@ -218,10 +218,10 @@ const App = (function() {
     elements.processingStatus.textContent = 'Analyzing images...';
 
     try {
-      // Use Vision API for pump (LCD display), Tesseract for odometer
+      // Use Vision API for both pump and odometer (works better for both)
       const [pumpOcr, odometerOcr] = await Promise.all([
-        OCR.extractText(state.pumpImage, true),   // true = use Vision API (pump)
-        OCR.extractText(state.odometerImage, false) // false = use Tesseract (odometer)
+        OCR.extractText(state.pumpImage, true),   // Vision API for pump
+        OCR.extractText(state.odometerImage, true) // Vision API for odometer
       ]);
 
       // Parse extracted data
