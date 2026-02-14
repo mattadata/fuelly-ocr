@@ -1,1 +1,3 @@
-config.js
+# config.js contains your API key - only ignore locally
+# Comment out this line if you want to deploy your API key to GitHub Pages
+# config.js
