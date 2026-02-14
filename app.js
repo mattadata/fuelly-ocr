@@ -64,12 +64,12 @@ const App = (function() {
    * Set up debug display for troubleshooting
    */
   function setupDebugDisplay() {
-    // Create debug container
+    // Create debug container (hidden by default)
     let debugContainer = document.getElementById('debug-output');
     if (!debugContainer) {
       debugContainer = document.createElement('div');
       debugContainer.id = 'debug-output';
-      debugContainer.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 400px; max-height: 50vh; overflow-y: auto; background: rgba(0,0,0,0.95); color: #0f0; font-family: monospace; font-size: 12px; padding: 12px; z-index: 9999; border: 2px solid #0f0; border-radius: 8px; word-break: break-word;';
+      debugContainer.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 400px; max-height: 50vh; overflow-y: auto; background: rgba(0,0,0,0.95); color: #0f0; font-family: monospace; font-size: 12px; padding: 12px; z-index: 9999; border: 2px solid #0f0; border-radius: 8px; word-break: break-word; display: none;';
       document.body.appendChild(debugContainer);
     }
 
