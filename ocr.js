@@ -5,7 +5,6 @@
 
 const OCR = (function() {
   let worker = null;
-  let isInitializing = false;
   let initPromise = null;
 
   /**
