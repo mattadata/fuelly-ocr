@@ -9,8 +9,7 @@ const App = (function() {
 
   // Application state
   const state = {
-    pumpImage: null,
-    odometerImage: null,
+    uploadedFiles: [],
     extractedData: null,
     debugLog: []
   };
@@ -24,12 +23,9 @@ const App = (function() {
       review: null
     },
     // Photo inputs
-    pumpFile: null,
-    odometerFile: null,
-    pumpPreview: null,
-    odometerPreview: null,
-    pumpPhotoInput: null,
-    odometerPhotoInput: null,
+    photosFile: null,
+    photosInput: null,
+    previewsContainer: null,
     // Buttons
     extractBtn: null,
     sendSmsBtn: null,
@@ -94,12 +90,9 @@ const App = (function() {
     elements.views.review = document.getElementById('view-review');
 
     // Photo inputs
-    elements.pumpFile = document.getElementById('pump-file');
-    elements.odometerFile = document.getElementById('odometer-file');
-    elements.pumpPreview = document.getElementById('pump-preview');
-    elements.odometerPreview = document.getElementById('odometer-preview');
-    elements.pumpPhotoInput = document.getElementById('pump-photo-input');
-    elements.odometerPhotoInput = document.getElementById('odometer-photo-input');
+    elements.photosFile = document.getElementById('photos-file');
+    elements.photosInput = document.getElementById('photos-input');
+    elements.previewsContainer = document.getElementById('previews');
 
     // Buttons
     elements.extractBtn = document.getElementById('extract-btn');
@@ -133,8 +126,13 @@ const App = (function() {
    * Set up all event listeners
    */
   function setupEventListeners() {
-    elements.pumpFile.addEventListener('change', handlePumpPhoto);
-    elements.odometerFile.addEventListener('change', handleOdometerPhoto);
+    // Photo upload - click on input area
+    elements.photosInput.addEventListener('click', function() {
+      elements.photosFile.click();
+    });
+
+    // Photo upload - file selection
+    elements.photosFile.addEventListener('change', handlePhotosUpload);
     elements.extractBtn.addEventListener('click', handleExtract);
     elements.sendSmsBtn.addEventListener('click', handleSendSms);
     elements.backBtn.addEventListener('click', handleBack);
@@ -142,91 +140,147 @@ const App = (function() {
   }
 
   /**
-   * Handle pump photo file selection
+   * Handle photo uploads (up to 2 photos)
    */
-  function handlePumpPhoto(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+  function handlePhotosUpload(e) {
+    const files = Array.from(e.target.files);
 
-    if (!file.type.startsWith('image/')) {
-      showError('Please select an image file');
+    if (files.length === 0) return;
+
+    // Limit to 2 photos
+    if (files.length > 2) {
+      showError('Please upload only 1-2 photos');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      state.pumpImage = event.target.result;
+    // Validate all are images
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        showError('Please select only image files');
+        return;
+      }
+    }
 
-      // Show preview
-      elements.pumpPreview.src = state.pumpImage;
-      elements.pumpPreview.classList.remove('hidden');
-      elements.pumpPhotoInput.classList.add('has-image');
+    state.uploadedFiles = files;
 
-      updateExtractButton();
-    };
-    reader.onerror = function() {
-      showError('Failed to read pump photo');
-    };
-    reader.readAsDataURL(file);
+    // Read and display previews
+    let loadedCount = 0;
+    elements.previewsContainer.innerHTML = '';
+
+    files.forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        // Create preview element
+        const previewDiv = document.createElement('div');
+        previewDiv.style.cssText = 'position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; background: #2a2a3e;';
+
+        const img = document.createElement('img');
+        img.src = event.target.result;
+        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+        previewDiv.appendChild(img);
+
+        // Add remove button
+        const removeBtn = document.createElement('button');
+        removeBtn.innerHTML = '×';
+        removeBtn.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 16px; cursor: pointer;';
+        removeBtn.onclick = function() {
+          removePhoto(index);
+        };
+        previewDiv.appendChild(removeBtn);
+
+        elements.previewsContainer.appendChild(previewDiv);
+
+        loadedCount++;
+        if (loadedCount === files.length) {
+          // All photos loaded, enable extract button
+          elements.extractBtn.disabled = false;
+        }
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   /**
-   * Handle odometer photo file selection
+   * Remove a specific photo by index
    */
-  function handleOdometerPhoto(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+  function removePhoto(index) {
+    state.uploadedFiles = state.uploadedFiles.filter((_, i) => i !== index);
 
-    if (!file.type.startsWith('image/')) {
-      showError('Please select an image file');
+    // Rebuild previews
+    elements.previewsContainer.innerHTML = '';
+    if (state.uploadedFiles.length === 0) {
+      elements.extractBtn.disabled = true;
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      state.odometerImage = event.target.result;
+    // Re-render previews
+    let loadedCount = 0;
+    state.uploadedFiles.forEach((file, newIndex) => {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const previewDiv = document.createElement('div');
+        previewDiv.style.cssText = 'position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; background: #2a2a3e;';
 
-      // Show preview
-      elements.odometerPreview.src = state.odometerImage;
-      elements.odometerPreview.classList.remove('hidden');
-      elements.odometerPhotoInput.classList.add('has-image');
+        const img = document.createElement('img');
+        img.src = event.target.result;
+        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+        previewDiv.appendChild(img);
 
-      updateExtractButton();
-    };
-    reader.onerror = function() {
-      showError('Failed to read odometer photo');
-    };
-    reader.readAsDataURL(file);
-  }
+        const removeBtn = document.createElement('button');
+        removeBtn.innerHTML = '×';
+        removeBtn.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 16px; cursor: pointer;';
+        removeBtn.onclick = function() {
+          removePhoto(newIndex);
+        };
+        previewDiv.appendChild(removeBtn);
 
-  /**
-   * Update extract button state (enabled only when both photos present)
-   */
-  function updateExtractButton() {
-    elements.extractBtn.disabled = !(state.pumpImage && state.odometerImage);
+        elements.previewsContainer.appendChild(previewDiv);
+
+        loadedCount++;
+        if (loadedCount === state.uploadedFiles.length) {
+          elements.extractBtn.disabled = false;
+        }
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   /**
    * Handle extract button click - process images with OCR
+   * Automatically determines which photo is pump vs odometer
    */
   async function handleExtract() {
     hideError();
     state.debugLog = []; // Clear debug log
+
+    if (state.uploadedFiles.length === 0) {
+      showError('Please upload at least one photo');
+      return;
+    }
 
     // Show processing view
     showView('processing');
     elements.processingStatus.textContent = 'Analyzing images...';
 
     try {
-      // Use Vision API for both pump and odometer (works better for both)
-      const [pumpOcr, odometerOcr] = await Promise.all([
-        OCR.extractText(state.pumpImage, true),   // Vision API for pump
-        OCR.extractText(state.odometerImage, true) // Vision API for odometer
-      ]);
+      // Process all uploaded photos with Vision API
+      const ocrResults = await Promise.all(
+        state.uploadedFiles.map(file => {
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+              const result = await OCR.extractText(event.target.result, true);
+              resolve(result);
+            };
+            reader.readAsDataURL(file);
+          });
+        })
+      );
 
-      // Parse extracted data
-      const pumpData = OCR.parsePumpData(pumpOcr);
-      const odometerData = OCR.parseOdometerData(odometerOcr);
+      debugLog('OCR results received:', ocrResults.length);
+
+      // Auto-detect which photo is pump vs odometer
+      const { pumpData, odometerData } = detectAndParseData(ocrResults);
 
       // Store extracted data
       state.extractedData = {
@@ -248,9 +302,76 @@ const App = (function() {
     } catch (error) {
       console.error('OCR extraction error:', error);
       showView('capture');
-      // Show detailed error for debugging
-      showError('Error: ' + error.message + ' | Check console for details');
+      showError('Error: ' + error.message);
     }
+  }
+
+  /**
+   * Detect which photo is pump vs odometer and parse data
+   */
+  function detectAndParseData(ocrResults) {
+    let pumpData = { gallons: { value: null, confidence: 0 }, pricePerGallon: { value: null, confidence: 0 }, total: { value: null, confidence: 0 } };
+    let odometerData = { miles: { value: null, confidence: 0 } };
+
+    // Try each result and extract what we can
+    for (let i = 0; i < ocrResults.length; i++) {
+      const result = ocrResults[i];
+      const text = result.text.toLowerCase();
+
+      debugLog('Photo ' + (i + 1) + ' contains:', text.substring(0, 100));
+
+      // Check for pump indicators
+      const hasGallons = text.includes('gallon') || text.includes('gal');
+      const hasSale = text.includes('sale') || text.includes('$') || text.includes('price');
+      const hasOdometer = text.includes('odometer') || text.includes('odo') || /\b\d{5,6}\b/.test(text);
+
+      debugLog('Photo ' + (i + 1) + ' - Gallons:', hasGallons, 'Sale:', hasSale, 'Odometer:', hasOdometer);
+
+      if (hasGallons || hasSale) {
+        // This is likely the pump
+        const parsed = OCR.parsePumpData(result);
+        if (parsed.gallons.value) {
+          pumpData = parsed;
+          debugLog('Photo ' + (i + 1) + ' identified as PUMP');
+        }
+      }
+
+      if (hasOdometer) {
+        // This is likely the odometer
+        const parsed = OCR.parseOdometerData(result);
+        if (parsed.miles.value) {
+          odometerData = parsed;
+          debugLog('Photo ' + (i + 1) + ' identified as ODOMETER');
+        }
+      }
+    }
+
+    // If detection failed, use fallback: assign first result as pump, second as odometer
+    if (!pumpData.gallons.value && !odometerData.miles.value) {
+      debugLog('Auto-detection failed, using fallback assignment');
+
+      // Parse all results and see what we got
+      const allPumpData = ocrResults.map(r => OCR.parsePumpData(r));
+      const allOdometerData = ocrResults.map(r => OCR.parseOdometerData(r));
+
+      // Find the best pump data (has gallons)
+      for (const data of allPumpData) {
+        if (data.gallons.value) {
+          pumpData = data;
+          break;
+        }
+      }
+
+      // Find the best odometer data (has miles)
+      for (const data of allOdometerData) {
+        if (data.miles.value) {
+          odometerData = data;
+          break;
+        }
+      }
+    }
+
+    return { pumpData, odometerData };
   }
 
   /**
@@ -352,19 +473,13 @@ const App = (function() {
    */
   function handleBack() {
     // Clear state
-    state.pumpImage = null;
-    state.odometerImage = null;
+    state.uploadedFiles = [];
     state.extractedData = null;
 
-    // Reset photo inputs
-    elements.pumpFile.value = '';
-    elements.odometerFile.value = '';
-    elements.pumpPreview.src = '';
-    elements.odometerPreview.src = '';
-    elements.pumpPreview.classList.add('hidden');
-    elements.odometerPreview.classList.add('hidden');
-    elements.pumpPhotoInput.classList.remove('has-image');
-    elements.odometerPhotoInput.classList.remove('has-image');
+    // Reset photo input
+    elements.photosFile.value = '';
+    elements.previewsContainer.innerHTML = '';
+    elements.extractBtn.disabled = true;
 
     // Clear form fields
     elements.gallons.value = '';
@@ -379,9 +494,6 @@ const App = (function() {
     elements.milesConfidence.classList.remove('high', 'medium', 'low');
     elements.pumpConfidence.classList.remove('high', 'medium', 'low');
     elements.odometerConfidence.classList.remove('high', 'medium', 'low');
-
-    // Disable extract button
-    elements.extractBtn.disabled = true;
 
     // Hide any errors
     hideError();

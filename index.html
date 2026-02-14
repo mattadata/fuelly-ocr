@@ -18,30 +18,19 @@
       <h1>Fuelly Fuel Up</h1>
     </header>
 
-    <!-- View 1: Photo Capture -->
+    <!-- View 1: Photo Upload -->
     <div id="view-capture" class="view active">
       <div class="photo-section">
-        <label>Gas Pump Photo</label>
-        <div class="photo-input" id="pump-photo-input">
-          <input type="file" id="pump-file" accept="image/*">
+        <label>Take Photos</label>
+        <p style="font-size: 13px; opacity: 0.8; margin-top: -8px;">Upload pump display and odometer (up to 2 photos)</p>
+        <input type="file" id="photos-file" accept="image/*" multiple style="display: none;">
+        <div class="photo-input" id="photos-input" style="cursor: pointer;">
           <div class="photo-placeholder">
             <span class="icon">📷</span>
-            <span>Tap to select pump photo</span>
+            <span>Tap to select photos</span>
           </div>
-          <img id="pump-preview" class="preview hidden" alt="Pump display preview">
         </div>
-      </div>
-
-      <div class="photo-section">
-        <label>Odometer Photo</label>
-        <div class="photo-input" id="odometer-photo-input">
-          <input type="file" id="odometer-file" accept="image/*">
-          <div class="photo-placeholder">
-            <span class="icon">📷</span>
-            <span>Tap to select odometer photo</span>
-          </div>
-          <img id="odometer-preview" class="preview hidden" alt="Odometer preview">
-        </div>
+        <div id="previews" style="display: flex; gap: 10px; margin-top: 10px;"></div>
       </div>
 
       <button id="extract-btn" class="btn btn-primary" disabled>Extract Data</button>
