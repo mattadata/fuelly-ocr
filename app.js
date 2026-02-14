@@ -69,15 +69,20 @@ const App = (function() {
     if (!debugContainer) {
       debugContainer = document.createElement('div');
       debugContainer.id = 'debug-output';
-      debugContainer.style.cssText = 'position: fixed; bottom: 0; left: 0; right: 0; max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.9); color: #0f0; font-family: monospace; font-size: 9px; padding: 6px; z-index: 100; border-top: 2px solid #0f0; word-break: break-word; pointer-events: none;';
+      debugContainer.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 400px; max-height: 50vh; overflow-y: auto; background: rgba(0,0,0,0.95); color: #0f0; font-family: monospace; font-size: 12px; padding: 12px; z-index: 9999; border: 2px solid #0f0; border-radius: 8px; word-break: break-word;';
       document.body.appendChild(debugContainer);
     }
 
     // Set up OCR debug callback
     OCR.setDebugCallback(function(message) {
       state.debugLog.push(message);
-      debugContainer.innerHTML = state.debugLog.slice(-20).map(m => `<div style="margin: 1px 0;">${m}</div>`).join('');
+      debugContainer.innerHTML = '<div style="position: sticky; top: 0; background: rgba(0,0,0,0.95); padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #0f0;"><strong>DEBUG LOG (tap to dismiss)</strong></div>' + state.debugLog.slice(-30).map(m => `<div style="margin: 2px 0; line-height: 1.4;">${m}</div>`).join('');
       debugContainer.scrollTop = debugContainer.scrollHeight;
+    });
+
+    // Tap to dismiss
+    debugContainer.addEventListener('click', function() {
+      debugContainer.style.display = 'none';
     });
   }
 
@@ -323,6 +328,28 @@ const App = (function() {
       }
 
       console.log('Showing review view');
+
+      // Log summary to console
+      console.log('=== EXTRACTION SUMMARY ===');
+      console.log('Gallons:', pumpData.gallons.value || 'NOT FOUND');
+      console.log('Price:', pumpData.pricePerGallon.value?.toFixed(3) || 'NOT FOUND');
+      console.log('Total:', pumpData.total.value || 'NOT FOUND');
+      console.log('Miles:', odometerData.miles.value || 'NOT FOUND');
+      console.log('=========================');
+
+      // Also add to debug display
+      const debugContainer = document.getElementById('debug-output');
+      if (debugContainer) {
+        state.debugLog.push('=== SUMMARY ===');
+        state.debugLog.push('Gallons: ' + (pumpData.gallons.value || 'NOT FOUND'));
+        state.debugLog.push('Price: ' + (pumpData.pricePerGallon.value?.toFixed(3) || 'NOT FOUND'));
+        state.debugLog.push('Total: ' + (pumpData.total.value || 'NOT FOUND'));
+        state.debugLog.push('Miles: ' + (odometerData.miles.value || 'NOT FOUND'));
+        state.debugLog.push('================');
+        // Update display
+        debugContainer.innerHTML = '<div style="position: sticky; top: 0; background: rgba(0,0,0,0.95); padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #0f0;"><strong>DEBUG LOG (tap to dismiss)</strong></div>' + state.debugLog.slice(-30).map(m => `<div style="margin: 2px 0; line-height: 1.4;">${m}</div>`).join('');
+      }
+
       // Populate and show review form (even if partial data - user can fill in missing)
       populateReviewForm(pumpData, odometerData);
       showView('review');
