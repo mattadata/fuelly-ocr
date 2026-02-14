@@ -43,11 +43,10 @@ const OCR = (function() {
   }
 
   /**
-   * Log to console and debug display (disabled in production)
+   * Log to console and debug display (enabled for debugging)
    */
   function debugLog(message, data) {
-    // Debug disabled for production - uncomment for development
-    // console.log(message, data);
+    console.log(message, data);
     if (debugCallback) {
       debugCallback(message + (data ? ' ' + JSON.stringify(data) : ''));
     }
