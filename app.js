@@ -257,9 +257,9 @@ const App = (function() {
    * Populate the review form with extracted data
    */
   function populateReviewForm(pumpData, odometerData) {
-    // Populate pump data fields
-    elements.gallons.value = pumpData.gallons.value || '';
-    elements.price.value = pumpData.pricePerGallon.value || '';
+    // Populate pump data fields (rounded to 3 decimals)
+    elements.gallons.value = pumpData.gallons.value ? parseFloat(pumpData.gallons.value.toFixed(3)) : '';
+    elements.price.value = pumpData.pricePerGallon.value ? parseFloat(pumpData.pricePerGallon.value.toFixed(3)) : '';
     elements.total.value = pumpData.total.value || '';
 
     // Populate odometer field
@@ -339,8 +339,8 @@ const App = (function() {
       return;
     }
 
-    // Format SMS body: [miles] [price] [gallons]
-    const smsBody = `${miles} ${price} ${gallons}`;
+    // Format SMS body: [miles] [price] [gallons] - round to 3 decimals
+    const smsBody = `${miles} ${parseFloat(priceNum.toFixed(3))} ${parseFloat(gallonsNum.toFixed(3))}`;
     const smsUrl = `sms:503-512-9929&body=${encodeURIComponent(smsBody)}`;
 
     // Open SMS link
