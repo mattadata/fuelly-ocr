@@ -25,6 +25,7 @@ const App = (function() {
     // Photo inputs
     photosFile: null,
     photosInput: null,
+    uploadLabelText: null,
     previewsContainer: null,
     // Buttons
     extractBtn: null,
@@ -92,6 +93,7 @@ const App = (function() {
     // Photo inputs
     elements.photosFile = document.getElementById('photos-file');
     elements.photosInput = document.getElementById('photos-input');
+    elements.uploadLabelText = document.getElementById('upload-label-text');
     elements.previewsContainer = document.getElementById('previews');
 
     // Buttons
@@ -138,31 +140,33 @@ const App = (function() {
    * Handle photo uploads (up to 2 photos)
    */
   function handlePhotosUpload(e) {
-    const files = Array.from(e.target.files);
+    const newFiles = Array.from(e.target.files);
 
-    if (files.length === 0) return;
-
-    // Limit to 2 photos
-    if (files.length > 2) {
-      showError('Please upload only 1-2 photos');
-      return;
-    }
+    if (newFiles.length === 0) return;
 
     // Validate all are images
-    for (const file of files) {
+    for (const file of newFiles) {
       if (!file.type.startsWith('image/')) {
         showError('Please select only image files');
         return;
       }
     }
 
-    state.uploadedFiles = files;
+    // Check total limit (2 photos max)
+    if (state.uploadedFiles.length + newFiles.length > 2) {
+      showError('Maximum 2 photos allowed. Remove some first.');
+      return;
+    }
 
-    // Read and display previews
+    // Append new files to existing
+    const startIndex = state.uploadedFiles.length;
+    state.uploadedFiles = [...state.uploadedFiles, ...newFiles];
+
+    // Read and display previews for new files
     let loadedCount = 0;
-    elements.previewsContainer.innerHTML = '';
 
-    files.forEach((file, index) => {
+    newFiles.forEach((file, i) => {
+      const actualIndex = startIndex + i;
       const reader = new FileReader();
       reader.onload = function(event) {
         // Create preview element
@@ -179,20 +183,40 @@ const App = (function() {
         removeBtn.innerHTML = '×';
         removeBtn.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 16px; cursor: pointer;';
         removeBtn.onclick = function() {
-          removePhoto(index);
+          removePhoto(actualIndex);
         };
         previewDiv.appendChild(removeBtn);
 
         elements.previewsContainer.appendChild(previewDiv);
 
         loadedCount++;
-        if (loadedCount === files.length) {
-          // All photos loaded, enable extract button
+        if (loadedCount === newFiles.length) {
+          // All new photos loaded, enable extract button
           elements.extractBtn.disabled = false;
         }
       };
       reader.readAsDataURL(file);
     });
+
+    // Clear file input so same files can be selected again if needed
+    elements.photosFile.value = '';
+
+    // Update upload label
+    updateUploadLabel();
+  }
+
+  /**
+   * Update the upload button label based on how many photos are selected
+   */
+  function updateUploadLabel() {
+    const count = state.uploadedFiles.length;
+    if (count === 0) {
+      elements.uploadLabelText.textContent = 'Tap to select photos';
+    } else if (count === 1) {
+      elements.uploadLabelText.textContent = '1/2 photos • Tap to add another';
+    } else {
+      elements.uploadLabelText.textContent = '2/2 photos selected';
+    }
   }
 
   /**
@@ -201,10 +225,14 @@ const App = (function() {
   function removePhoto(index) {
     state.uploadedFiles = state.uploadedFiles.filter((_, i) => i !== index);
 
+    // Clear file input
+    elements.photosFile.value = '';
+
     // Rebuild previews
     elements.previewsContainer.innerHTML = '';
     if (state.uploadedFiles.length === 0) {
       elements.extractBtn.disabled = true;
+      updateUploadLabel();
       return;
     }
 
@@ -234,6 +262,7 @@ const App = (function() {
         loadedCount++;
         if (loadedCount === state.uploadedFiles.length) {
           elements.extractBtn.disabled = false;
+          updateUploadLabel();
         }
       };
       reader.readAsDataURL(file);
@@ -489,6 +518,9 @@ const App = (function() {
     elements.milesConfidence.classList.remove('high', 'medium', 'low');
     elements.pumpConfidence.classList.remove('high', 'medium', 'low');
     elements.odometerConfidence.classList.remove('high', 'medium', 'low');
+
+    // Reset upload label
+    updateUploadLabel();
 
     // Hide any errors
     hideError();
