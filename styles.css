@@ -214,7 +214,7 @@ h2 {
   content: '';
   display: block;
   height: 100%;
-  width: 0%;
+  width: var(--confidence-width, 0%);
   background-color: var(--warning);
   transition: width 0.3s ease, background-color 0.3s ease;
 }
