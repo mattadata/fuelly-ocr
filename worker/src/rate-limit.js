@@ -1,5 +1,10 @@
 export async function checkRateLimit(ip, env) {
   const MAX_REQUESTS = parseInt(env.RATE_LIMIT_MAX || '100');
+
+  if (Number.isNaN(MAX_REQUESTS) || MAX_REQUESTS < 0) {
+    throw new Error('RATE_LIMIT_MAX must be a valid non-negative integer');
+  }
+
   const now = Math.floor(Date.now() / 1000);
   const dayStart = Math.floor(now / 86400) * 86400;
 
