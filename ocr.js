@@ -81,9 +81,19 @@ const OCR = (function() {
    * Excellent for LCD/digital displays
    */
   async function extractWithVisionAPI(imageData) {
-    const key = getApiKey();
+    let key = getApiKey();
+
+    // Prompt for API key if not set
     if (!key) {
-      throw new Error('Google Cloud Vision API key not set. Add it to config.js');
+      key = prompt('Enter your Google Cloud Vision API key:');
+      if (key) {
+        setApiKey(key);
+        localStorage.setItem('fuelly_google_vision_key', key);
+      }
+    }
+
+    if (!key) {
+      throw new Error('Google Cloud Vision API key required. Get one from https://console.cloud.google.com/apis/credentials');
     }
 
     debugLog('Using Google Vision API for digital display');
