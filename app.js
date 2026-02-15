@@ -314,19 +314,27 @@ const App = (function() {
     elements.processingStatus.textContent = 'Analyzing images...';
 
     try {
-      // Process all uploaded photos with Vision API
-      const ocrResults = await Promise.all(
-        state.uploadedFiles.map(file => {
-          return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-              const result = await OCR.extractText(event.target.result, true);
-              resolve(result);
-            };
-            reader.readAsDataURL(file);
-          });
-        })
-      );
+      // Process photos sequentially to avoid rate limiting
+      const ocrResults = [];
+      for (let i = 0; i < state.uploadedFiles.length; i++) {
+        const file = state.uploadedFiles[i];
+        elements.processingStatus.textContent = `Processing photo ${i + 1} of ${state.uploadedFiles.length}...`;
+
+        const result = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = async (event) => {
+            const ocrResult = await OCR.extractText(event.target.result, true);
+            resolve(ocrResult);
+          };
+          reader.readAsDataURL(file);
+        });
+        ocrResults.push(result);
+
+        // Small delay between requests to avoid rate limiting
+        if (i < state.uploadedFiles.length - 1) {
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
 
       console.log('OCR results received:', ocrResults.length);
 
