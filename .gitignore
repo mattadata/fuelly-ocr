@@ -1,2 +1,3 @@
 # config.js contains your API key - never commit it
 config.js
+config.local.js

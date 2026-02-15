@@ -68,11 +68,17 @@ const OCR = (function() {
    * @param {boolean} useVisionAPI - True for pump displays (use Google Vision)
    */
   async function extractText(imageData, useVisionAPI = false) {
+    const useWorker = (typeof CONFIG !== 'undefined' && CONFIG.useWorker) ||
+                      localStorage.getItem('fuelly_use_worker') === 'true';
+
+    if (useWorker) {
+      return await extractWithWorker(imageData);
+    }
+
     if (useVisionAPI) {
       return await extractWithVisionAPI(imageData);
     }
 
-    // Use Tesseract for odometer
     return await extractWithTesseract(imageData);
   }
 
@@ -166,6 +172,45 @@ const OCR = (function() {
       text: fullText,
       confidence: 85,
       lines: lines
+    };
+  }
+
+  /**
+   * Extract text using Worker proxy
+   */
+  async function extractWithWorker(imageData) {
+    debugLog('Using Worker proxy for OCR');
+    updateProgress('Processing via Worker...');
+
+    const workerUrl = (typeof CONFIG !== 'undefined' && CONFIG.workerUrl) ||
+                      localStorage.getItem('fuelly_worker_url');
+
+    if (!workerUrl) {
+      throw new Error('Worker URL not configured. Add it to config.local.js');
+    }
+
+    const response = await fetch(workerUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: imageData })
+    });
+
+    if (response.status === 429) {
+      throw new Error('Rate limit exceeded. Please try again later.');
+    }
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Worker request failed');
+    }
+
+    const result = await response.json();
+    debugLog('Worker OCR result:', result.text);
+
+    return {
+      text: result.text,
+      confidence: 85,
+      lines: result.lines || []
     };
   }
 
