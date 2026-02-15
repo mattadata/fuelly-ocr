@@ -145,6 +145,7 @@ const App = (function() {
    * Handle photo uploads (up to 2 photos)
    */
   function handlePhotosUpload(e) {
+    console.log('handlePhotosUpload called, files:', e.target.files);
     const newFiles = Array.from(e.target.files);
 
     if (newFiles.length === 0) return;
@@ -166,48 +167,68 @@ const App = (function() {
     // Append new files to existing
     const startIndex = state.uploadedFiles.length;
     state.uploadedFiles = [...state.uploadedFiles, ...newFiles];
+    console.log('Total files now:', state.uploadedFiles.length);
+
+    // Update upload label immediately
+    updateUploadLabel();
 
     // Read and display previews for new files
     let loadedCount = 0;
 
     newFiles.forEach((file, i) => {
       const actualIndex = startIndex + i;
+      console.log('Reading file', i, file.name, file.type, file.size);
+
       const reader = new FileReader();
+
       reader.onload = function(event) {
-        // Create preview element
-        const previewDiv = document.createElement('div');
-        previewDiv.style.cssText = 'position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; background: #2a2a3e;';
+        console.log('File loaded:', file.name, 'data length:', event.target.result?.length);
 
-        const img = document.createElement('img');
-        img.src = event.target.result;
-        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
-        previewDiv.appendChild(img);
+        try {
+          // Create preview element
+          const previewDiv = document.createElement('div');
+          previewDiv.style.cssText = 'position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; background: #2a2a3e;';
 
-        // Add remove button
-        const removeBtn = document.createElement('button');
-        removeBtn.innerHTML = '×';
-        removeBtn.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 16px; cursor: pointer;';
-        removeBtn.onclick = function() {
-          removePhoto(actualIndex);
-        };
-        previewDiv.appendChild(removeBtn);
+          const img = document.createElement('img');
+          img.src = event.target.result;
+          img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+          previewDiv.appendChild(img);
 
-        elements.previewsContainer.appendChild(previewDiv);
+          // Add remove button
+          const removeBtn = document.createElement('button');
+          removeBtn.innerHTML = '×';
+          removeBtn.type = 'button';
+          removeBtn.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 16px; cursor: pointer;';
+          removeBtn.onclick = function() {
+            removePhoto(actualIndex);
+          };
+          previewDiv.appendChild(removeBtn);
 
-        loadedCount++;
-        if (loadedCount === newFiles.length) {
-          // All new photos loaded, enable extract button
-          elements.extractBtn.disabled = false;
+          elements.previewsContainer.appendChild(previewDiv);
+          console.log('Preview appended, container children:', elements.previewsContainer.children.length);
+
+          loadedCount++;
+          if (loadedCount === newFiles.length) {
+            // All new photos loaded, enable extract button
+            elements.extractBtn.disabled = false;
+            console.log('All photos loaded, extract button enabled');
+          }
+        } catch (err) {
+          console.error('Error creating preview:', err);
+          showError('Error creating preview: ' + err.message);
         }
       };
+
+      reader.onerror = function(err) {
+        console.error('FileReader error:', err);
+        showError('Error reading file: ' + file.name);
+      };
+
       reader.readAsDataURL(file);
     });
 
     // Clear file input so same files can be selected again if needed
     elements.photosFile.value = '';
-
-    // Update upload label
-    updateUploadLabel();
   }
 
   /**
@@ -281,6 +302,7 @@ const App = (function() {
   async function handleExtract() {
     hideError();
     state.debugLog = []; // Clear debug log
+    let debugContainer = document.getElementById('debug-output');
 
     if (state.uploadedFiles.length === 0) {
       showError('Please upload at least one photo');
@@ -337,42 +359,26 @@ const App = (function() {
       console.log('Miles:', odometerData.miles.value || 'NOT FOUND');
       console.log('=========================');
 
-      // Also add to debug display
-      const debugContainer = document.getElementById('debug-output');
+      // Add to debug log and update display
+      state.debugLog.push('=== SUMMARY ===');
+      state.debugLog.push('Gallons: ' + (pumpData.gallons.value || 'NOT FOUND'));
+      state.debugLog.push('Price: ' + (pumpData.pricePerGallon.value?.toFixed(3) || 'NOT FOUND'));
+      state.debugLog.push('Total: ' + (pumpData.total.value || 'NOT FOUND'));
+      state.debugLog.push('Miles: ' + (odometerData.miles.value || 'NOT FOUND'));
+      state.debugLog.push('================');
+
       if (debugContainer) {
-        state.debugLog.push('=== SUMMARY ===');
-        state.debugLog.push('Gallons: ' + (pumpData.gallons.value || 'NOT FOUND'));
-        state.debugLog.push('Price: ' + (pumpData.pricePerGallon.value?.toFixed(3) || 'NOT FOUND'));
-        state.debugLog.push('Total: ' + (pumpData.total.value || 'NOT FOUND'));
-        state.debugLog.push('Miles: ' + (odometerData.miles.value || 'NOT FOUND'));
-        state.debugLog.push('================');
-        // Update display
         debugContainer.innerHTML = '<div style="position: sticky; top: 0; background: rgba(0,0,0,0.95); padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #0f0;"><strong>DEBUG LOG (tap to dismiss)</strong></div>' + state.debugLog.slice(-30).map(m => `<div style="margin: 2px 0; line-height: 1.4;">${m}</div>`).join('');
       }
 
       // Populate and show review form (even if partial data - user can fill in missing)
       populateReviewForm(pumpData, odometerData);
 
-      // Log summary to debug
-      state.debugLog.push('=== EXTRACTION SUMMARY ===');
-      state.debugLog.push('Gallons: ' + (pumpData.gallons.value || 'NOT FOUND'));
-      state.debugLog.push('Total: ' + (pumpData.total.value || 'NOT FOUND'));
-      state.debugLog.push('Miles: ' + (odometerData.miles.value || 'NOT FOUND'));
-      state.debugLog.push('=========================');
-
-      // Update debug display
-      const debugContainer = document.getElementById('debug-output');
-      if (debugContainer) {
-        debugContainer.innerHTML = '<div style="position: sticky; top: 0; background: rgba(0,0,0,0.95); padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #0f0;"><strong>DEBUG LOG (tap to dismiss)</strong></div>' + state.debugLog.slice(-30).map(m => `<div style="margin: 2px 0; line-height: 1.4;">${m}</div>`).join('');
-      }
-
       showView('review');
 
     } catch (error) {
       console.error('OCR extraction error:', error);
       state.debugLog.push('ERROR: ' + error.message);
-      // Update debug display
-      const debugContainer = document.getElementById('debug-output');
       if (debugContainer) {
         debugContainer.innerHTML = '<div style="position: sticky; top: 0; background: rgba(0,0,0,0.95); padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #0f0;"><strong>DEBUG LOG (tap to dismiss)</strong></div>' + state.debugLog.slice(-30).map(m => `<div style="margin: 2px 0; line-height: 1.4;">${m}</div>`).join('');
       }

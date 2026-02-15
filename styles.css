@@ -328,6 +328,19 @@ h2 {
   justify-content: center;
 }
 
+/* Screen-reader only - visually hidden but accessible for label triggers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 @supports (padding: max(0px)) {
   .app-container {
     padding-bottom: max(env(safe-area-inset-bottom), var(--spacing));
