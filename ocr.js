@@ -89,17 +89,8 @@ const OCR = (function() {
   async function extractWithVisionAPI(imageData) {
     let key = getApiKey();
 
-    // Prompt for API key if not set
     if (!key) {
-      key = prompt('Enter your Google Cloud Vision API key:');
-      if (key) {
-        setApiKey(key);
-        localStorage.setItem('fuelly_google_vision_key', key);
-      }
-    }
-
-    if (!key) {
-      throw new Error('Google Cloud Vision API key required. Get one from https://console.cloud.google.com/apis/credentials');
+      throw new Error('Google Cloud Vision API key not configured. Add it to config.local.js or use Worker mode.');
     }
 
     debugLog('Using Google Vision API for digital display');
