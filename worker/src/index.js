@@ -133,6 +133,7 @@ router.post('/ocr', async (request) => {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
         },
       }
     );
@@ -154,6 +155,7 @@ router.all('*', () => {
       headers: {
         'Content-Type': 'application/json',
         'Allow': 'POST, OPTIONS',
+        'Access-Control-Allow-Origin': '*',
       },
     }
   );
@@ -164,14 +166,11 @@ router.all('*', () => {
  */
 export default {
   fetch: (request, env, ctx) => {
-    // Ensure request is cloned if needed for validation
-    const clonedRequest = request.clone ? request.clone() : request;
-
     return router
       .handle(request)
       .then((response) => addCorsHeaders(response))
       .catch((error) => {
-        // Global error handler
+        // Global error handler with CORS headers
         return new Response(
           JSON.stringify({
             success: false,
@@ -182,6 +181,7 @@ export default {
             status: 500,
             headers: {
               'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
             },
           }
         );
