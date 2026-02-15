@@ -182,6 +182,94 @@ const OCR = (function() {
   }
 
   /**
+   * Preprocess image for better OCR accuracy
+   * - Upscales small images
+   * - Enhances contrast
+   * - Sharpens text
+   */
+  function preprocessForOCR(imageData) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Upscale to at least 2000px width for better OCR
+        const minWidth = 2000;
+        let width = img.width;
+        let height = img.height;
+        const scale = width < minWidth ? minWidth / width : 1;
+
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Enable image smoothing for better upscaling
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Get image data for processing
+        const imgData = ctx.getImageData(0, 0, width, height);
+        const data = imgData.data;
+
+        // Convert to grayscale and enhance contrast
+        for (let i = 0; i < data.length; i += 4) {
+          // Grayscale
+          const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+
+          // High contrast enhancement - make dark darker, light lighter
+          // This helps decimal points and LCD segments stand out
+          const contrast = 1.5;
+          const enhanced = ((gray / 255 - 0.5) * contrast + 0.5) * 255;
+          const clamped = Math.min(255, Math.max(0, enhanced));
+
+          data[i] = data[i + 1] = data[i + 2] = clamped;
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+
+        // Apply sharpening using a convolution
+        const sharpenCanvas = document.createElement('canvas');
+        sharpenCanvas.width = width;
+        sharpenCanvas.height = height;
+        const sharpenCtx = sharpenCanvas.getContext('2d');
+
+        // Copy the contrast-enhanced image
+        sharpenCtx.drawImage(canvas, 0, 0);
+        const sharpenData = sharpenCtx.getImageData(0, 0, width, height);
+        const sd = sharpenData.data;
+        const origData = ctx.getImageData(0, 0, width, height);
+        const od = origData.data;
+
+        // Unsharp mask: subtract blurred version
+        const amount = 0.5;
+        for (let y = 1; y < height - 1; y++) {
+          for (let x = 1; x < width - 1; x++) {
+            const idx = (y * width + x) * 4;
+
+            // Simple box blur kernel
+            const blur = (
+              od[idx - width * 4] + od[idx + width * 4] +
+              od[idx - 4] + od[idx + 4] +
+              od[idx]
+            ) / 5;
+
+            // Sharpen
+            const sharpened = od[idx] + (od[idx] - blur) * amount;
+            sd[idx] = sd[idx + 1] = sd[idx + 2] = Math.min(255, Math.max(0, sharpened));
+          }
+        }
+
+        resolve(sharpenCanvas.toDataURL('image/jpeg', 0.95));
+      };
+      img.src = imageData;
+    });
+  }
+
+  /**
    * Extract text using Worker proxy
    */
   async function extractWithWorker(imageData) {
@@ -195,6 +283,11 @@ const OCR = (function() {
       throw new Error('Worker URL not configured. Add it to config.local.js');
     }
 
+    // Preprocess image for better OCR accuracy
+    updateProgress('Enhancing image...');
+    const preprocessedImage = await preprocessForOCR(imageData);
+    debugLog('Image preprocessed');
+
     // Add timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -203,7 +296,7 @@ const OCR = (function() {
       const response = await fetch(workerUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: imageData }),
+        body: JSON.stringify({ image: preprocessedImage }),
         signal: controller.signal
       });
       clearTimeout(timeoutId);
@@ -341,6 +434,7 @@ const OCR = (function() {
 
     let gallons = null;
     let gallonsConfidence = 0;
+    let gallonsDigits = null;  // Track digits used for gallons
     let pricePerGallon = null;
     let priceConfidence = 0;
     let total = null;
@@ -358,6 +452,8 @@ const OCR = (function() {
 
     // General patterns for other cases
     text = text
+      // Fix OCR artifacts with spaces in decimals: "10. 19" -> "10.19"
+      .replace(/(\d+)\.\s+(\d{2})\b/g, '$1.$2')
       // "9.81 | 1" -> "9.811"
       .replace(/(\d)\.(\d{2})\s*\|\s*(\d)/g, '$1.$2$3')
       // "9.81|1" -> "9.811"
@@ -373,11 +469,43 @@ const OCR = (function() {
 
     // Gallons: 3 decimals (e.g., 9.811)
     const gallonsPattern = /\b(\d{1,2}\.\d{3})\b/;
-    const gallonsMatch = text.match(gallonsPattern);
-    if (gallonsMatch) {
+    let gallonsMatch = text.match(gallonsPattern);
+
+    // HEURISTIC: If no gallons found with decimal, try to find 5-digit number
+    // that could be gallons without detected decimal (e.g., "14997" -> 14.997)
+    if (!gallonsMatch) {
+      // Look for 4-5 digit numbers that could be gallons (1-25 gallons range)
+      const noDecimalPattern = /\b(\d{4,5})\b/g;
+      const candidates = [...text.matchAll(noDecimalPattern)];
+      debugLog('Gallons heuristic candidates:', candidates.map(m => m[1]));
+
+      for (const match of candidates) {
+        const digits = match[1];
+        // Try inserting decimal after 1-2 digits for gallons
+        for (let decimalPos = 1; decimalPos <= 2; decimalPos++) {
+          const withDecimal = parseFloat(
+            digits.slice(0, decimalPos) + '.' + digits.slice(decimalPos)
+          );
+          // Valid gallons range: 1-25, with 3 decimal places means 4-5 digits
+          if (withDecimal >= 1 && withDecimal <= 25 && digits.length === decimalPos + 3) {
+            gallons = withDecimal;
+            gallonsMatch = match;
+            gallonsDigits = digits;
+            debugLog('Gallons heuristic applied:', digits, '->', withDecimal);
+            break;
+          }
+        }
+        if (gallons) break;
+      }
+    }
+
+    if (gallonsMatch && !gallons) {
       gallons = parseFloat(gallonsMatch[1]);
+    }
+
+    if (gallons) {
       for (const line of ocrResult.lines) {
-        if (line.text && line.text.includes(gallonsMatch[1])) {
+        if (line.text && (line.text.includes(gallonsMatch[1]) || line.text.includes(gallons.toString()))) {
           gallonsConfidence = line.confidence || 70;
           break;
         }
@@ -386,18 +514,62 @@ const OCR = (function() {
 
     // Total: 2 decimals, $10-$500 range
     const totalPattern = /\$?\s*(\d{1,3}\.\d{2})\b/g;
-    const totalMatches = [...text.matchAll(totalPattern)];
-    for (const match of totalMatches) {
-      const value = parseFloat(match[1]);
-      if (value >= 10 && value <= 500) {
-        total = value;
-        for (const line of ocrResult.lines) {
-          if (line.text && line.text.includes(match[1])) {
-            totalConfidence = line.confidence || 70;
+    let totalMatches = [...text.matchAll(totalPattern)];
+
+    // HEURISTIC: If no total found with decimal, try 4-digit numbers
+    // that could be total without detected decimal (e.g., "5948" -> 59.48)
+    if (totalMatches.length === 0) {
+      const noDecimalPattern = /\b(\d{4})\b/g;
+      const candidates = [...text.matchAll(noDecimalPattern)];
+      debugLog('Total heuristic candidates:', candidates.map(m => m[1]));
+
+      for (const match of candidates) {
+        const digits = match[1];
+        // Skip if these digits were already used for gallons
+        if (gallonsDigits && digits === gallonsDigits) {
+          debugLog('Skipping total candidate (used for gallons):', digits);
+          continue;
+        }
+
+        // Try inserting decimal after 2 digits for total (e.g., 5948 -> 59.48)
+        for (let decimalPos = 2; decimalPos <= 3; decimalPos++) {
+          const withDecimal = parseFloat(
+            digits.slice(0, decimalPos) + '.' + digits.slice(decimalPos)
+          );
+          // Valid total range: $10-$500
+          if (withDecimal >= 10 && withDecimal <= 500) {
+            total = withDecimal;
+            totalMatches = [match];
+            debugLog('Total heuristic applied:', digits, '->', withDecimal);
             break;
           }
         }
-        break;
+        if (total) break;
+      }
+    }
+
+    if (!total && totalMatches.length > 0) {
+      for (const match of totalMatches) {
+        const value = parseFloat(match[1]);
+        if (value >= 10 && value <= 500) {
+          total = value;
+          for (const line of ocrResult.lines) {
+            if (line.text && line.text.includes(match[1])) {
+              totalConfidence = line.confidence || 70;
+              break;
+            }
+          }
+          break;
+        }
+      }
+    }
+
+    if (total) {
+      for (const line of ocrResult.lines) {
+        if (line.text && line.text.includes(total.toString())) {
+          totalConfidence = line.confidence || 70;
+          break;
+        }
       }
     }
 

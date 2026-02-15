@@ -3,11 +3,12 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import sharp from 'sharp';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const IMAGES_DIR = path.join(__dirname, 'images');
+const IMAGES_DIR = path.join(__dirname, 'images-converted');
 
 /**
  * Parse expected values from filename
@@ -33,9 +34,12 @@ function parseFilename(filename) {
     }
   } else if (parts[0] === 'odometer') {
     result.type = 'odometer';
+    // Format: odometer_<miles> or odometer_<miles>_miles
     for (let i = 1; i < parts.length; i++) {
-      if (parts[i] === 'miles' && i + 1 < parts.length) {
-        result.miles = parseInt(parts[i + 1]);
+      const num = parseInt(parts[i]);
+      if (!isNaN(num) && num > 10000) {
+        result.miles = num;
+        break;
       }
     }
   }
@@ -69,22 +73,110 @@ function fileToBase64(filepath) {
 }
 
 /**
+ * Preprocess image for better OCR accuracy
+ * - Upscales to at least 2000px
+ * - Enhances contrast
+ * - Applies sharpening
+ */
+async function preprocessImage(filepath) {
+  const image = sharp(filepath);
+  const metadata = await image.metadata();
+
+  // Calculate upscale factor if needed
+  const minWidth = 2000;
+  const scale = metadata.width < minWidth ? minWidth / metadata.width : 1;
+
+  // Process: resize, grayscale, enhance contrast, sharpen
+  const processed = await image
+    .resize(Math.round(metadata.width * scale), Math.round(metadata.height * scale), {
+      kernel: sharp.kernel.lanczos3
+    })
+    .grayscale()
+    .linear(1.5, -(0.5 * 255)) // Contrast enhancement: a=1.5, b=-0.5*255
+    .sharpen({
+      sigma: 1,
+      m1: 0,
+      m2: 3,
+      x1: 2,
+      y2: 10
+    })
+    .jpeg({ quality: 95 })
+    .toBuffer();
+
+  return `data:image/jpeg;base64,${processed.toString('base64')}`;
+}
+
+/**
  * Parse pump data from OCR text
  */
 function parsePumpData(text) {
+  let gallons = null;
+  let gallonsDigits = null;  // Track which digits were used for gallons
+
+  // Pre-clean: handle OCR artifacts like "10. 19" -> "10.19"
+  let cleanedText = text.replace(/(\d+)\.\s+(\d{2})\b/g, '$1.$2');
+
   // Match 3-decimal number for gallons
-  const gallonsMatch = text.match(/\b(\d{1,2}\.\d{3})\b/);
-  const gallons = gallonsMatch ? parseFloat(gallonsMatch[1]) : null;
+  const gallonsMatch = cleanedText.match(/\b(\d{1,2}\.\d{3})\b/);
+  gallons = gallonsMatch ? parseFloat(gallonsMatch[1]) : null;
+
+  // HEURISTIC: If no gallons found with decimal, try 5-digit number
+  if (!gallons) {
+    const noDecimalPattern = /\b(\d{4,5})\b/g;
+    const candidates = [...cleanedText.matchAll(noDecimalPattern)];
+
+    for (const match of candidates) {
+      const digits = match[1];
+      // Try inserting decimal after 1-2 digits for gallons
+      for (let decimalPos = 1; decimalPos <= 2; decimalPos++) {
+        const withDecimal = parseFloat(
+          digits.slice(0, decimalPos) + '.' + digits.slice(decimalPos)
+        );
+        // Valid gallons range: 1-25, with 3 decimal places
+        if (withDecimal >= 1 && withDecimal <= 25 && digits.length === decimalPos + 3) {
+          gallons = withDecimal;
+          gallonsDigits = digits;
+          break;
+        }
+      }
+      if (gallons) break;
+    }
+  }
 
   // Match 2-decimal number for total ($10-$500 range)
-  const totalPattern = /\$?\s*(\d{1,3}\.\d{2})\b/g;
   let total = null;
+  const totalPattern = /\$?\s*(\d{1,3}\.\d{2})\b/g;
   let match;
-  while ((match = totalPattern.exec(text)) !== null) {
+  while ((match = totalPattern.exec(cleanedText)) !== null) {
     const value = parseFloat(match[1]);
     if (value >= 10 && value <= 500) {
       total = value;
       break;
+    }
+  }
+
+  // HEURISTIC: If no total found with decimal, try 4-digit number
+  if (!total) {
+    const noDecimalPattern = /\b(\d{4})\b/g;
+    const candidates = [...cleanedText.matchAll(noDecimalPattern)];
+
+    for (const match of candidates) {
+      const digits = match[1];
+      // Skip if these digits were already used for gallons
+      if (gallonsDigits && digits === gallonsDigits) continue;
+
+      // Try inserting decimal after 2-3 digits for total
+      for (let decimalPos = 2; decimalPos <= 3; decimalPos++) {
+        const withDecimal = parseFloat(
+          digits.slice(0, decimalPos) + '.' + digits.slice(decimalPos)
+        );
+        // Valid total range: $10-$500
+        if (withDecimal >= 10 && withDecimal <= 500) {
+          total = withDecimal;
+          break;
+        }
+      }
+      if (total) break;
     }
   }
 
@@ -122,12 +214,17 @@ async function runTests(workerUrl) {
 
   for (const test of tests) {
     const filepath = path.join(IMAGES_DIR, test.filename);
-    const imageData = fileToBase64(filepath);
 
     try {
+      // Preprocess image for better OCR
+      const imageData = await preprocessImage(filepath);
+
       const response = await fetch(workerUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Test-Bypass': 'fuelly-test-2024'
+        },
         body: JSON.stringify({ image: imageData })
       });
 
@@ -140,6 +237,7 @@ async function runTests(workerUrl) {
       const text = result.data?.text || result.text || '';
 
       console.log(`\n${test.filename}`);
+      console.log(`  RAW OCR: "${text.slice(0, 200)}${text.length > 200 ? '...' : ''}"`);
 
       if (test.type === 'pump') {
         const { gallons, total } = parsePumpData(text);

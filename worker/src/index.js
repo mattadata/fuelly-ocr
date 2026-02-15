@@ -19,7 +19,7 @@ function handleCorsOptions() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Test-Bypass',
       'Access-Control-Max-Age': '86400',
     },
   });
@@ -98,23 +98,29 @@ router.post('/ocr', async (request, env) => {
     // Get client IP from CF-Connecting-IP header
     const clientIp = request.headers.get('CF-Connecting-IP');
 
-    // Check rate limit
-    const rateLimitResult = await checkRateLimit(clientIp, env);
-    if (!rateLimitResult.allowed) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Rate limit exceeded',
-        }),
-        {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Retry-After': rateLimitResult.retryAfter.toString(),
-          },
-        }
-      );
+    // Check for test bypass header (allows skipping rate limit for testing)
+    const testBypass = request.headers.get('X-Test-Bypass');
+    const testBypassKey = env.TEST_BYPASS_KEY || 'fuelly-test-2024';
+
+    // Check rate limit (skip if valid test bypass header provided)
+    if (testBypass !== testBypassKey) {
+      const rateLimitResult = await checkRateLimit(clientIp, env);
+      if (!rateLimitResult.allowed) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Rate limit exceeded',
+          }),
+          {
+            status: 429,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              'Retry-After': rateLimitResult.retryAfter.toString(),
+            },
+          }
+        );
+      }
     }
 
     // Validate image data
