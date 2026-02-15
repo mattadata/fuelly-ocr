@@ -92,7 +92,6 @@ router.options('*', (request, env) => handleCorsOptions());
 
 /**
  * Handle POST requests to /ocr endpoint
- * TODO: Add Vision API integration
  */
 router.post('/ocr', async (request, env) => {
   try {
@@ -121,23 +120,37 @@ router.post('/ocr', async (request, env) => {
     // Validate image data
     const imageData = await validateImageData(request);
 
-    // TODO: Implement Vision API call
-    // const result = await callVisionAPI(imageData, env);
+    // Check for API key configuration
+    const apiKey = env.GOOGLE_VISION_API_KEY;
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Google Vision API key not configured',
+        }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      );
+    }
 
-    // Placeholder response
+    // Call Vision API
+    const result = await callVisionAPI(imageData.image, apiKey);
+
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'OCR endpoint ready for implementation',
-        received: {
-          hasImage: !!imageData.image,
-          imageLength: imageData.image.length,
-        },
+        data: result,
       }),
       {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
         },
       }
     );
@@ -178,6 +191,59 @@ router.all('*', (request, env) => {
     }
   );
 });
+
+/**
+ * Call Google Vision API for text detection
+ * @param {string} base64Image - Base64 encoded image (with or without data URL prefix)
+ * @param {string} apiKey - Google Cloud API key
+ * @returns {Promise<{text: string, lines: array}>}
+ */
+async function callVisionAPI(base64Image, apiKey) {
+  const base64Data = base64Image.includes(',')
+    ? base64Image.split(',')[1]
+    : base64Image;
+
+  const requestBody = {
+    requests: [{
+      image: { content: base64Data },
+      features: [{ type: 'TEXT_DETECTION', maxResults: 10 }]
+    }]
+  };
+
+  const response = await fetch(
+    `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Vision API request failed');
+  }
+
+  const data = await response.json();
+  const annotations = data.responses[0]?.textAnnotations;
+
+  if (!annotations || annotations.length === 0) {
+    return { text: '', lines: [] };
+  }
+
+  const fullText = annotations[0].description || '';
+
+  const lines = [];
+  for (let i = 1; i < annotations.length; i++) {
+    const annotation = annotations[i];
+    lines.push({
+      text: annotation.description,
+      confidence: annotation.confidence || 85
+    });
+  }
+
+  return { text: fullText, lines };
+}
 
 /**
  * Main fetch handler for Cloudflare Worker
