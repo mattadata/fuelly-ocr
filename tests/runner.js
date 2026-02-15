@@ -23,11 +23,12 @@ function parseFilename(filename) {
 
   if (parts[0] === 'pump') {
     result.type = 'pump';
+    // Format: pump_<gallons>_gallons_<total>_total
     for (let i = 1; i < parts.length; i++) {
-      if (parts[i] === 'gallons' && i + 1 < parts.length) {
-        result.gallons = parseFloat(parts[i + 1]);
-      } else if (parts[i] === 'total' && i + 1 < parts.length) {
-        result.total = parseFloat(parts[i + 1]);
+      if (parts[i] === 'gallons' && i > 1) {
+        result.gallons = parseFloat(parts[i - 1]);
+      } else if (parts[i] === 'total' && i > 1) {
+        result.total = parseFloat(parts[i - 1]);
       }
     }
   } else if (parts[0] === 'odometer') {
@@ -135,7 +136,8 @@ async function runTests(workerUrl) {
       }
 
       const result = await response.json();
-      const text = result.text || '';
+      // Worker returns {success: true, data: {text, lines}}
+      const text = result.data?.text || result.text || '';
 
       console.log(`\n${test.filename}`);
 
