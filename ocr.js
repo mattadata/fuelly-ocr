@@ -270,7 +270,7 @@ const OCR = (function() {
   }
 
   /**
-   * Extract text using Worker proxy
+   * Extract text using Worker proxy with retry logic
    */
   async function extractWithWorker(imageData) {
     debugLog('Using Worker proxy for OCR');
@@ -288,49 +288,71 @@ const OCR = (function() {
     const preprocessedImage = await preprocessForOCR(imageData);
     debugLog('Image preprocessed');
 
-    // Add timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    // Retry logic with exponential backoff
+    const maxRetries = 3;
+    const baseDelay = 2000; // 2 seconds
 
-    try {
-      const response = await fetch(workerUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: preprocessedImage }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      // Add timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      debugLog('Worker response status:', response.status);
+      try {
+        if (attempt > 0) {
+          const delay = baseDelay * Math.pow(2, attempt); // 2s, 4s, 8s
+          debugLog(`Retry attempt ${attempt + 1}, waiting ${delay}ms...`);
+          updateProgress(`Rate limited, retrying in ${Math.round(delay/1000)}s...`);
+          await new Promise(r => setTimeout(r, delay));
+        }
 
-      if (response.status === 429) {
-        throw new Error('Rate limit exceeded. Please try again later.');
+        const response = await fetch(workerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: preprocessedImage }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        debugLog('Worker response status:', response.status);
+
+        if (response.status === 429) {
+          if (attempt < maxRetries - 1) {
+            debugLog('Rate limited, will retry...');
+            continue; // Retry
+          }
+          throw new Error('Rate limit exceeded after retries. Please wait a minute and try again.');
+        }
+
+        if (!response.ok) {
+          const text = await response.text();
+          debugLog('Worker error response:', text);
+          throw new Error('Worker request failed: ' + text);
+        }
+
+        const result = await response.json();
+
+        // Worker returns {success: true, data: {text, lines}}
+        const data = result.data || result;
+        debugLog('Worker OCR result:', data.text?.substring(0, 100) || '(empty)');
+
+        return {
+          text: data.text || '',
+          confidence: 85,
+          lines: data.lines || []
+        };
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          throw new Error('Request timeout after 30 seconds');
+        }
+        if (attempt === maxRetries - 1) {
+          throw error; // Re-throw on last attempt
+        }
+        // Continue to retry for other errors
       }
-
-      if (!response.ok) {
-        const text = await response.text();
-        debugLog('Worker error response:', text);
-        throw new Error('Worker request failed: ' + text);
-      }
-
-      const result = await response.json();
-
-      // Worker returns {success: true, data: {text, lines}}
-      const data = result.data || result;
-      debugLog('Worker OCR result:', data.text?.substring(0, 100) || '(empty)');
-
-      return {
-        text: data.text || '',
-        confidence: 85,
-        lines: data.lines || []
-      };
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        throw new Error('Request timeout after 30 seconds');
-      }
-      throw error;
     }
+
+    throw new Error('Max retries exceeded');
   }
 
   /**
