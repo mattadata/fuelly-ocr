@@ -221,12 +221,15 @@ const OCR = (function() {
       }
 
       const result = await response.json();
-      debugLog('Worker OCR result:', result.text?.substring(0, 100));
+
+      // Worker returns {success: true, data: {text, lines}}
+      const data = result.data || result;
+      debugLog('Worker OCR result:', data.text?.substring(0, 100) || '(empty)');
 
       return {
-        text: result.text || '',
+        text: data.text || '',
         confidence: 85,
-        lines: result.lines || []
+        lines: data.lines || []
       };
     } catch (error) {
       clearTimeout(timeoutId);
