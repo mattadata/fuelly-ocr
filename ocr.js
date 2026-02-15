@@ -24,6 +24,21 @@ const OCR = (function() {
   }
 
   /**
+   * Get Worker URL (with default)
+   */
+  function getWorkerUrl() {
+    // From config file
+    if (typeof CONFIG !== 'undefined' && CONFIG.workerUrl) {
+      return CONFIG.workerUrl;
+    }
+    // From localStorage
+    const stored = localStorage.getItem('fuelly_worker_url');
+    if (stored) return stored;
+    // Default for GitHub Pages deployment
+    return 'https://fuelly-ocr-proxy.mattadata-fuelly.workers.dev/ocr';
+  }
+
+  /**
    * Get stored API key
    */
   function getApiKey() {
@@ -173,8 +188,7 @@ const OCR = (function() {
     debugLog('Using Worker proxy for OCR');
     updateProgress('Processing via Worker...');
 
-    const workerUrl = (typeof CONFIG !== 'undefined' && CONFIG.workerUrl) ||
-                      localStorage.getItem('fuelly_worker_url');
+    const workerUrl = getWorkerUrl();
 
     if (!workerUrl) {
       throw new Error('Worker URL not configured. Add it to config.local.js');
