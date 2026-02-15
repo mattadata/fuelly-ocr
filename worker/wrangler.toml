@@ -7,4 +7,4 @@ RATE_LIMIT_MAX = "100"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "YOUR_KV_NAMESPACE_ID"
+id = "9ae8e48d37a349b18b64a2d40d6520dd"
