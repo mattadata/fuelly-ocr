@@ -52,7 +52,42 @@ Note: PWA features (service worker, install prompt) require HTTPS. For local tes
 
 ## Deployment
 
-Deploy to any static hosting service:
+### Cloudflare Worker Setup
+
+1. Install Wrangler CLI:
+   ```bash
+   npm install -g wrangler
+   ```
+
+2. Login to Cloudflare:
+   ```bash
+   wrangler login
+   ```
+
+3. Create KV namespace:
+   ```bash
+   cd worker
+   wrangler kv:namespace create "RATE_LIMIT"
+   ```
+
+4. Update `wrangler.toml` with the returned KV namespace ID
+
+5. Set environment variables in Cloudflare dashboard:
+   - Go to Workers > fuelly-ocr-proxy > Settings > Variables
+   - Add: `GOOGLE_VISION_API_KEY = your-key-here`
+
+6. Deploy:
+   ```bash
+   cd worker
+   npm install
+   wrangler deploy
+   ```
+
+7. Update `config.local.js` with your Worker URL
+
+### Static Site Deployment
+
+Deploy the web app to any static hosting service:
 - GitHub Pages
 - Netlify
 - Vercel
