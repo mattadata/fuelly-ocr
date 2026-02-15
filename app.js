@@ -469,7 +469,7 @@ const App = (function() {
   function populateReviewForm(pumpData, odometerData) {
     // Populate pump data fields (rounded to 3 decimals)
     elements.gallons.value = pumpData.gallons.value ? parseFloat(pumpData.gallons.value.toFixed(3)) : '';
-    elements.price.value = pumpData.pricePerGallon.value ? parseFloat(pumpData.pricePerGallon.value.toFixed(3)) : '';
+    elements.price.value = pumpData.pricePerGallon.value ? pumpData.pricePerGallon.value.toFixed(3) : '';
     elements.total.value = pumpData.total.value || '';
 
     // Populate odometer field

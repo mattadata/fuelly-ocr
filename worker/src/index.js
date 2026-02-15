@@ -6,6 +6,11 @@
 import { Router } from 'itty-router';
 import { checkRateLimit } from './rate-limit.js';
 
+// Whitelisted IPs that bypass rate limiting (for testing)
+const WHITELISTED_IPS = [
+  '2600:1700:84dd:be10:8592:588e:bc2b:a8f0', // Developer IP
+];
+
 // Create router
 const router = Router();
 
@@ -98,12 +103,13 @@ router.post('/ocr', async (request, env) => {
     // Get client IP from CF-Connecting-IP header
     const clientIp = request.headers.get('CF-Connecting-IP');
 
-    // Check for test bypass header (allows skipping rate limit for testing)
+    // Check for test bypass header or whitelisted IP (allows skipping rate limit for testing)
     const testBypass = request.headers.get('X-Test-Bypass');
     const testBypassKey = env.TEST_BYPASS_KEY || 'fuelly-test-2024';
+    const isWhitelisted = WHITELISTED_IPS.includes(clientIp);
 
-    // Check rate limit (skip if valid test bypass header provided)
-    if (testBypass !== testBypassKey) {
+    // Check rate limit (skip if valid test bypass header provided or IP is whitelisted)
+    if (testBypass !== testBypassKey && !isWhitelisted) {
       const rateLimitResult = await checkRateLimit(clientIp, env);
       if (!rateLimitResult.allowed) {
         return new Response(

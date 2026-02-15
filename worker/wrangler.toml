@@ -3,7 +3,7 @@ main = "src/index.js"
 compatibility_date = "2024-01-01"
 
 [vars]
-RATE_LIMIT_MAX = "100"
+RATE_LIMIT_MAX = "1000"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
