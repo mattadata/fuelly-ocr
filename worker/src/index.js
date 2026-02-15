@@ -4,6 +4,7 @@
  */
 
 import { Router } from 'itty-router';
+import { checkRateLimit } from './rate-limit.js';
 
 // Create router
 const router = Router();
@@ -87,21 +88,38 @@ async function validateImageData(request) {
 /**
  * Handle OPTIONS requests for CORS preflight
  */
-router.options('*', () => handleCorsOptions());
+router.options('*', (request, env) => handleCorsOptions());
 
 /**
  * Handle POST requests to /ocr endpoint
- * TODO: Add rate limiting
  * TODO: Add Vision API integration
  */
-router.post('/ocr', async (request) => {
+router.post('/ocr', async (request, env) => {
   try {
+    // Get client IP from CF-Connecting-IP header
+    const clientIp = request.headers.get('CF-Connecting-IP');
+
+    // Check rate limit
+    const rateLimitResult = await checkRateLimit(clientIp, env);
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Rate limit exceeded',
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Retry-After': rateLimitResult.retryAfter.toString(),
+          },
+        }
+      );
+    }
+
     // Validate image data
     const imageData = await validateImageData(request);
-
-    // TODO: Implement rate limiting using KV
-    // const clientIp = request.headers.get('CF-Connecting-IP');
-    // await checkRateLimit(clientIp, env);
 
     // TODO: Implement Vision API call
     // const result = await callVisionAPI(imageData, env);
@@ -144,7 +162,7 @@ router.post('/ocr', async (request) => {
  * Catch-all route for unsupported methods/paths
  * Enforces POST-only for the main endpoint
  */
-router.all('*', () => {
+router.all('*', (request, env) => {
   return new Response(
     JSON.stringify({
       success: false,
@@ -167,7 +185,7 @@ router.all('*', () => {
 export default {
   fetch: (request, env, ctx) => {
     return router
-      .handle(request)
+      .handle(request, env)
       .then((response) => addCorsHeaders(response))
       .catch((error) => {
         // Global error handler with CORS headers
