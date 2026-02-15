@@ -60,7 +60,7 @@ async function validateImageData(request) {
     }
 
     // Validate base64/data URL format
-    const dataUrlPattern = /^data:image\/(jpeg|png|gif|webp);base64,/i;
+    const dataUrlPattern = /^data:image\/(jpeg|png|gif|webp|heic);base64,/i;
     const base64Pattern = /^[A-Za-z0-9+/]+={0,2}$/;
 
     if (!dataUrlPattern.test(body.image) && !base64Pattern.test(body.image)) {

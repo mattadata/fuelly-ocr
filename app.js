@@ -352,10 +352,30 @@ const App = (function() {
 
       // Populate and show review form (even if partial data - user can fill in missing)
       populateReviewForm(pumpData, odometerData);
+
+      // Log summary to debug
+      state.debugLog.push('=== EXTRACTION SUMMARY ===');
+      state.debugLog.push('Gallons: ' + (pumpData.gallons.value || 'NOT FOUND'));
+      state.debugLog.push('Total: ' + (pumpData.total.value || 'NOT FOUND'));
+      state.debugLog.push('Miles: ' + (odometerData.miles.value || 'NOT FOUND'));
+      state.debugLog.push('=========================');
+
+      // Update debug display
+      const debugContainer = document.getElementById('debug-output');
+      if (debugContainer) {
+        debugContainer.innerHTML = '<div style="position: sticky; top: 0; background: rgba(0,0,0,0.95); padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #0f0;"><strong>DEBUG LOG (tap to dismiss)</strong></div>' + state.debugLog.slice(-30).map(m => `<div style="margin: 2px 0; line-height: 1.4;">${m}</div>`).join('');
+      }
+
       showView('review');
 
     } catch (error) {
       console.error('OCR extraction error:', error);
+      state.debugLog.push('ERROR: ' + error.message);
+      // Update debug display
+      const debugContainer = document.getElementById('debug-output');
+      if (debugContainer) {
+        debugContainer.innerHTML = '<div style="position: sticky; top: 0; background: rgba(0,0,0,0.95); padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #0f0;"><strong>DEBUG LOG (tap to dismiss)</strong></div>' + state.debugLog.slice(-30).map(m => `<div style="margin: 2px 0; line-height: 1.4;">${m}</div>`).join('');
+      }
       showView('capture');
       showError('Error: ' + error.message);
     }

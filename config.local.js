@@ -1,7 +1,7 @@
 const CONFIG = {
   // Deploy the Worker from /worker directory with: wrangler deploy
   // Then update this URL with your deployed Worker URL
-  workerUrl: 'https://fuelly-ocr-proxy.YOUR-SUBDOMAIN.workers.dev',
+  workerUrl: 'https://fuelly-ocr-proxy.mattadata-fuelly.workers.dev/ocr',
 
   // Set to true to use Worker proxy mode (recommended - no API key needed)
   useWorker: true,

@@ -189,34 +189,52 @@ const OCR = (function() {
     updateProgress('Processing via Worker...');
 
     const workerUrl = getWorkerUrl();
+    debugLog('Worker URL:', workerUrl);
 
     if (!workerUrl) {
       throw new Error('Worker URL not configured. Add it to config.local.js');
     }
 
-    const response = await fetch(workerUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: imageData })
-    });
+    // Add timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    if (response.status === 429) {
-      throw new Error('Rate limit exceeded. Please try again later.');
+    try {
+      const response = await fetch(workerUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageData }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      debugLog('Worker response status:', response.status);
+
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+      }
+
+      if (!response.ok) {
+        const text = await response.text();
+        debugLog('Worker error response:', text);
+        throw new Error('Worker request failed: ' + text);
+      }
+
+      const result = await response.json();
+      debugLog('Worker OCR result:', result.text?.substring(0, 100));
+
+      return {
+        text: result.text || '',
+        confidence: 85,
+        lines: result.lines || []
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout after 30 seconds');
+      }
+      throw error;
     }
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Worker request failed');
-    }
-
-    const result = await response.json();
-    debugLog('Worker OCR result:', result.text);
-
-    return {
-      text: result.text,
-      confidence: 85,
-      lines: result.lines || []
-    };
   }
 
   /**
