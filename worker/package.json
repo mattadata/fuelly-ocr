@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "Proxy for Google Vision API with rate limiting",
   "main": "src/index.js",
+  "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "test": "node ../tests/test-worker.js"
   },
   "dependencies": {
     "itty-router": "^4.0.20"
