@@ -142,8 +142,18 @@ const App = (function() {
    * Set up all event listeners
    */
   function setupEventListeners() {
-    // Photo upload - file selection (label for="photos-file" handles click natively)
+    // Photo upload - file selection
     elements.photosFile.addEventListener('change', handlePhotosUpload);
+
+    // Fallback click handler for iOS/older browsers
+    elements.photosInput.addEventListener('click', function(e) {
+      // Only trigger if the click wasn't on the file input itself
+      if (e.target !== elements.photosFile) {
+        e.preventDefault();
+        elements.photosFile.click();
+      }
+    });
+
     elements.extractBtn.addEventListener('click', handleExtract);
     elements.sendSmsBtn.addEventListener('click', handleSendSms);
     elements.backBtn.addEventListener('click', handleBack);

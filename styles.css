@@ -375,6 +375,7 @@ h1 {
   );
   opacity: 0;
   transition: opacity var(--transition-normal);
+  pointer-events: none;
 }
 
 .photo-input:hover::before {
