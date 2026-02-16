@@ -145,10 +145,14 @@ const App = (function() {
     // Photo upload - file selection
     elements.photosFile.addEventListener('change', handlePhotosUpload);
 
-    // Fallback click handler for iOS/older browsers
-    elements.photosInput.addEventListener('click', function(e) {
-      // Only trigger if the click wasn't on the file input itself
-      if (e.target !== elements.photosFile) {
+    // Click handler for upload area
+    elements.photosInput.addEventListener('click', function() {
+      elements.photosFile.click();
+    });
+
+    // Keyboard support for accessibility
+    elements.photosInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         elements.photosFile.click();
       }

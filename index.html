@@ -57,8 +57,8 @@
         </div>
         <div class="panel-content">
           <div class="photo-section">
-            <label class="photo-input" id="photos-input">
-              <input type="file" id="photos-file" accept="image/*" multiple>
+            <input type="file" id="photos-file" accept="image/*" multiple style="display:none">
+            <div class="photo-input" id="photos-input" role="button" tabindex="0">
               <div class="photo-placeholder">
                 <div class="scan-icon">
                   <svg viewBox="0 0 64 64">
@@ -70,7 +70,7 @@
                 <span class="upload-text" id="upload-label-text">Tap to Upload</span>
                 <span class="upload-hint">Upload pump display or odometer images</span>
               </div>
-            </label>
+            </div>
             <div id="previews"></div>
           </div>
 
