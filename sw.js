@@ -3,7 +3,7 @@
  * Enables offline capability after first load
  */
 
-const CACHE_NAME = 'fuelly-ocr-v21';
+const CACHE_NAME = 'fuelly-ocr-v22';
 const urlsToCache = [
   '/',
   '/index.html',

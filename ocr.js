@@ -188,83 +188,112 @@ const OCR = (function() {
    * - Sharpens text
    */
   function preprocessForOCR(imageData) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Image preprocessing timed out'));
+      }, 15000); // 15 second timeout
+
       const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
 
-        // Upscale to at least 2000px width for better OCR
-        const minWidth = 2000;
-        let width = img.width;
-        let height = img.height;
-        const scale = width < minWidth ? minWidth / width : 1;
-
-        width = Math.round(width * scale);
-        height = Math.round(height * scale);
-
-        canvas.width = width;
-        canvas.height = height;
-
-        // Enable image smoothing for better upscaling
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Get image data for processing
-        const imgData = ctx.getImageData(0, 0, width, height);
-        const data = imgData.data;
-
-        // Convert to grayscale and enhance contrast
-        for (let i = 0; i < data.length; i += 4) {
-          // Grayscale
-          const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
-
-          // High contrast enhancement - make dark darker, light lighter
-          // This helps decimal points and LCD segments stand out
-          const contrast = 1.5;
-          const enhanced = ((gray / 255 - 0.5) * contrast + 0.5) * 255;
-          const clamped = Math.min(255, Math.max(0, enhanced));
-
-          data[i] = data[i + 1] = data[i + 2] = clamped;
-        }
-
-        ctx.putImageData(imgData, 0, 0);
-
-        // Apply sharpening using a convolution
-        const sharpenCanvas = document.createElement('canvas');
-        sharpenCanvas.width = width;
-        sharpenCanvas.height = height;
-        const sharpenCtx = sharpenCanvas.getContext('2d');
-
-        // Copy the contrast-enhanced image
-        sharpenCtx.drawImage(canvas, 0, 0);
-        const sharpenData = sharpenCtx.getImageData(0, 0, width, height);
-        const sd = sharpenData.data;
-        const origData = ctx.getImageData(0, 0, width, height);
-        const od = origData.data;
-
-        // Unsharp mask: subtract blurred version
-        const amount = 0.5;
-        for (let y = 1; y < height - 1; y++) {
-          for (let x = 1; x < width - 1; x++) {
-            const idx = (y * width + x) * 4;
-
-            // Simple box blur kernel
-            const blur = (
-              od[idx - width * 4] + od[idx + width * 4] +
-              od[idx - 4] + od[idx + 4] +
-              od[idx]
-            ) / 5;
-
-            // Sharpen
-            const sharpened = od[idx] + (od[idx] - blur) * amount;
-            sd[idx] = sd[idx + 1] = sd[idx + 2] = Math.min(255, Math.max(0, sharpened));
-          }
-        }
-
-        resolve(sharpenCanvas.toDataURL('image/jpeg', 0.95));
+      img.onerror = function() {
+        clearTimeout(timeoutId);
+        reject(new Error('Failed to load image'));
       };
+
+      img.onload = function() {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          // Downscale large images to max 2000px width for faster processing
+          const maxWidth = 2000;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth) {
+            const scale = maxWidth / width;
+            width = maxWidth;
+            height = Math.round(height * scale);
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          // Enable image smoothing for better scaling
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Get image data for processing
+          const imgData = ctx.getImageData(0, 0, width, height);
+          const data = imgData.data;
+
+          // Convert to grayscale and enhance contrast
+          for (let i = 0; i < data.length; i += 4) {
+            // Grayscale
+            const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+
+            // High contrast enhancement - make dark darker, light lighter
+            // This helps decimal points and LCD segments stand out
+            const contrast = 1.5;
+            const enhanced = ((gray / 255 - 0.5) * contrast + 0.5) * 255;
+            const clamped = Math.min(255, Math.max(0, enhanced));
+
+            data[i] = data[i + 1] = data[i + 2] = clamped;
+          }
+
+          ctx.putImageData(imgData, 0, 0);
+
+          // Skip sharpening for very large images to avoid blocking
+          // For images > 1.5 megapixels, skip the sharpening pass
+          const pixelCount = width * height;
+          if (pixelCount > 1500000) {
+            debugLog('Skipping sharpening for large image');
+            clearTimeout(timeoutId);
+            resolve(canvas.toDataURL('image/jpeg', 0.9));
+            return;
+          }
+
+          // Apply sharpening using a convolution
+          const sharpenCanvas = document.createElement('canvas');
+          sharpenCanvas.width = width;
+          sharpenCanvas.height = height;
+          const sharpenCtx = sharpenCanvas.getContext('2d');
+
+          // Copy the contrast-enhanced image
+          sharpenCtx.drawImage(canvas, 0, 0);
+          const sharpenData = sharpenCtx.getImageData(0, 0, width, height);
+          const sd = sharpenData.data;
+          const origData = ctx.getImageData(0, 0, width, height);
+          const od = origData.data;
+
+          // Unsharp mask: subtract blurred version
+          const amount = 0.5;
+          for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+              const idx = (y * width + x) * 4;
+
+              // Simple box blur kernel
+              const blur = (
+                od[idx - width * 4] + od[idx + width * 4] +
+                od[idx - 4] + od[idx + 4] +
+                od[idx]
+              ) / 5;
+
+              // Sharpen
+              const sharpened = od[idx] + (od[idx] - blur) * amount;
+              sd[idx] = sd[idx + 1] = sd[idx + 2] = Math.min(255, Math.max(0, sharpened));
+            }
+          }
+
+          clearTimeout(timeoutId);
+          resolve(sharpenCanvas.toDataURL('image/jpeg', 0.9));
+        } catch (err) {
+          clearTimeout(timeoutId);
+          reject(new Error('Image processing failed: ' + err.message));
+        }
+      };
+
       img.src = imageData;
     });
   }

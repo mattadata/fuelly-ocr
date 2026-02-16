@@ -320,12 +320,30 @@ const App = (function() {
         const file = state.uploadedFiles[i];
         elements.processingStatus.textContent = `Processing photo ${i + 1} of ${state.uploadedFiles.length}...`;
 
-        const result = await new Promise((resolve) => {
+        const result = await new Promise((resolve, reject) => {
+          // Timeout for this single image
+          const timeoutId = setTimeout(() => {
+            reject(new Error(`Processing photo ${i + 1} timed out. Try a smaller image.`));
+          }, 60000); // 60 second timeout per image
+
           const reader = new FileReader();
-          reader.onload = async (event) => {
-            const ocrResult = await OCR.extractText(event.target.result, true);
-            resolve(ocrResult);
+
+          reader.onerror = function() {
+            clearTimeout(timeoutId);
+            reject(new Error('Failed to read file: ' + file.name));
           };
+
+          reader.onload = async (event) => {
+            try {
+              const ocrResult = await OCR.extractText(event.target.result, true);
+              clearTimeout(timeoutId);
+              resolve(ocrResult);
+            } catch (err) {
+              clearTimeout(timeoutId);
+              reject(err);
+            }
+          };
+
           reader.readAsDataURL(file);
         });
         ocrResults.push(result);
