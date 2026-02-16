@@ -6,36 +6,87 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Fuelly">
-  <!-- Dynamic theme color for light/dark mode -->
-  <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#0A0A0A">
   <title>Fuelly OCR</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Animated grid background -->
+  <div class="grid-bg"></div>
+
+  <!-- Corner decorations -->
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+
   <div class="app-container">
     <header>
-      <h1>Fuelly Fuel Up</h1>
+      <div class="logo-container">
+        <div class="fuel-icon">
+          <svg viewBox="0 0 40 40">
+            <path d="M8 6h16c2.2 0 4 1.8 4 4v20c0 2.2-1.8 4-4 4H8c-2.2 0-4-1.8-4-4V10c0-2.2 1.8-4 4-4z"/>
+            <path d="M28 12h5c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2h-5"/>
+            <circle cx="16" cy="20" r="5"/>
+            <path d="M16 15v10M11 20h10"/>
+          </svg>
+        </div>
+        <h1>Fuelly</h1>
+      </div>
+      <p class="subtitle">Optical Character Recognition System</p>
     </header>
+
+    <div class="status-bar">
+      <div class="status-item">
+        <span class="status-dot"></span>
+        <span>System Ready</span>
+      </div>
+      <div class="status-item">
+        <span id="slot-counter">SLOT: 0/2</span>
+      </div>
+    </div>
 
     <!-- View 1: Photo Upload -->
     <div id="view-capture" class="view active">
-      <div class="photo-section">
-        <label>Take Photos</label>
-        <p>Upload pump display and odometer (up to 2 photos)</p>
-        <input type="file" id="photos-file" accept="image/*" multiple class="sr-only">
-        <label for="photos-file" class="photo-input" id="photos-input">
-          <div class="photo-placeholder">
-            <span class="icon">📷</span>
-            <span id="upload-label-text">Tap to select photos</span>
+      <div class="photo-panel">
+        <div class="panel-header">
+          <span class="panel-title">Image Capture</span>
+          <span class="panel-badge">MAX 2 FILES</span>
+        </div>
+        <div class="panel-content">
+          <div class="photo-section">
+            <input type="file" id="photos-file" accept="image/*" multiple class="sr-only">
+            <label for="photos-file" class="photo-input" id="photos-input">
+              <div class="photo-placeholder">
+                <div class="scan-icon">
+                  <svg viewBox="0 0 64 64">
+                    <rect x="4" y="4" width="56" height="56" rx="4"/>
+                    <path d="M4 16h56M4 48h56M16 4v56M48 4v56"/>
+                    <circle cx="32" cy="32" r="10"/>
+                  </svg>
+                </div>
+                <span class="upload-text" id="upload-label-text">Tap to Scan</span>
+                <span class="upload-hint">Upload pump display or odometer images</span>
+              </div>
+            </label>
+            <div id="previews"></div>
           </div>
-        </label>
-        <div id="previews"></div>
+
+          <div class="photo-counter">
+            <div class="counter-slot" id="counter-slot-1">01</div>
+            <div class="counter-slot" id="counter-slot-2">02</div>
+          </div>
+        </div>
       </div>
 
-      <button id="extract-btn" class="btn btn-primary" disabled>Extract Data</button>
+      <button id="extract-btn" class="btn btn-primary" disabled><span>Initialize Extraction</span></button>
+
+      <div class="footer">
+        <p class="footer-text">Fuel Tracking System</p>
+        <p class="footer-text footer-version">v2.0 // OCR ENGINE ACTIVE</p>
+      </div>
     </div>
 
     <!-- View 2: Processing -->
@@ -80,8 +131,13 @@
         </div>
       </div>
 
-      <button id="send-sms-btn" class="btn btn-primary">Send SMS to Fuelly</button>
-      <button id="back-btn" class="btn btn-secondary">Start Over</button>
+      <button id="send-sms-btn" class="btn btn-primary"><span>Transmit to Fuelly</span></button>
+      <button id="back-btn" class="btn btn-secondary"><span>Reset System</span></button>
+
+      <div class="footer">
+        <p class="footer-text">Data Transmission Module</p>
+        <p class="footer-text footer-version">SMS GATEWAY READY</p>
+      </div>
     </div>
 
     <!-- Error Banner -->

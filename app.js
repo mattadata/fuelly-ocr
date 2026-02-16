@@ -27,6 +27,10 @@ const App = (function() {
     photosInput: null,
     uploadLabelText: null,
     previewsContainer: null,
+    // Slot counter
+    slotCounter: null,
+    counterSlot1: null,
+    counterSlot2: null,
     // Buttons
     extractBtn: null,
     sendSmsBtn: null,
@@ -100,6 +104,11 @@ const App = (function() {
     elements.photosInput = document.getElementById('photos-input');
     elements.uploadLabelText = document.getElementById('upload-label-text');
     elements.previewsContainer = document.getElementById('previews');
+
+    // Slot counter
+    elements.slotCounter = document.getElementById('slot-counter');
+    elements.counterSlot1 = document.getElementById('counter-slot-1');
+    elements.counterSlot2 = document.getElementById('counter-slot-2');
 
     // Buttons
     elements.extractBtn = document.getElementById('extract-btn');
@@ -232,16 +241,39 @@ const App = (function() {
   }
 
   /**
-   * Update the upload button label based on how many photos are selected
+   * Update the upload button label and slot counter based on how many photos are selected
    */
   function updateUploadLabel() {
     const count = state.uploadedFiles.length;
+
+    // Update upload text
     if (count === 0) {
-      elements.uploadLabelText.textContent = 'Tap to select photos';
+      elements.uploadLabelText.textContent = 'Tap to Scan';
     } else if (count === 1) {
-      elements.uploadLabelText.textContent = '1/2 photos • Tap to add another';
+      elements.uploadLabelText.textContent = '1/2 Scanned';
     } else {
-      elements.uploadLabelText.textContent = '2/2 photos selected';
+      elements.uploadLabelText.textContent = '2/2 Scanned';
+    }
+
+    // Update slot counter in status bar
+    if (elements.slotCounter) {
+      elements.slotCounter.textContent = 'SLOT: ' + count + '/2';
+    }
+
+    // Update counter slots
+    if (elements.counterSlot1) {
+      if (count >= 1) {
+        elements.counterSlot1.classList.add('active');
+      } else {
+        elements.counterSlot1.classList.remove('active');
+      }
+    }
+    if (elements.counterSlot2) {
+      if (count >= 2) {
+        elements.counterSlot2.classList.add('active');
+      } else {
+        elements.counterSlot2.classList.remove('active');
+      }
     }
   }
 
@@ -603,6 +635,10 @@ const App = (function() {
     elements.milesConfidence.classList.remove('high', 'medium', 'low');
     elements.pumpConfidence.classList.remove('high', 'medium', 'low');
     elements.odometerConfidence.classList.remove('high', 'medium', 'low');
+
+    // Reset counter slots
+    if (elements.counterSlot1) elements.counterSlot1.classList.remove('active');
+    if (elements.counterSlot2) elements.counterSlot2.classList.remove('active');
 
     // Reset upload label
     updateUploadLabel();
