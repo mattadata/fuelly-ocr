@@ -248,11 +248,11 @@ const App = (function() {
 
     // Update upload text
     if (count === 0) {
-      elements.uploadLabelText.textContent = 'Tap to Scan';
+      elements.uploadLabelText.textContent = 'Tap to Upload';
     } else if (count === 1) {
-      elements.uploadLabelText.textContent = '1/2 Scanned';
+      elements.uploadLabelText.textContent = '1/2 Uploaded - Tap for 2nd';
     } else {
-      elements.uploadLabelText.textContent = '2/2 Scanned';
+      elements.uploadLabelText.textContent = '2/2 Uploaded';
     }
 
     // Update slot counter in status bar
