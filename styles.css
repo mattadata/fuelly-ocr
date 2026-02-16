@@ -1,17 +1,88 @@
+/* ============================================
+   Fuelly OCR - Modern iOS-Style UI
+   Auto-switching Light/Dark Mode
+   ============================================ */
+
+/* Light Mode (Default) */
 :root {
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-input: #0f3460;
-  --text-primary: #eaeaea;
-  --text-secondary: #a0a0a0;
-  --accent: #e94560;
-  --accent-hover: #ff6b6b;
-  --success: #4ade80;
-  --warning: #fbbf24;
-  --error: #ef4444;
+  /* iOS Semantic Colors - Light Mode */
+  --bg-primary: #F2F2F7;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #F2F2F7;
+  --bg-input: #FFFFFF;
+  --separator: rgba(60, 60, 67, 0.12);
+
+  /* Text Colors */
+  --text-primary: #000000;
+  --text-secondary: rgba(60, 60, 67, 0.6);
+  --text-tertiary: rgba(60, 60, 67, 0.3);
+
+  /* Accent Colors */
+  --accent: #007AFF;
+  --accent-hover: #0056CC;
+  --accent-light: rgba(0, 122, 255, 0.1);
+
+  /* Semantic Colors */
+  --success: #34C759;
+  --success-light: rgba(52, 199, 89, 0.12);
+  --warning: #FF9500;
+  --warning-light: rgba(255, 149, 0, 0.12);
+  --error: #FF3B30;
+  --error-light: rgba(255, 59, 48, 0.12);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* Spacing & Sizing */
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing: 16px;
+  --spacing-lg: 20px;
+  --spacing-xl: 24px;
   --border-radius: 12px;
-  --spacing: 1rem;
+  --border-radius-lg: 16px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.35s ease;
 }
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* iOS Semantic Colors - Dark Mode */
+    --bg-primary: #000000;
+    --bg-secondary: #1C1C1E;
+    --bg-tertiary: #2C2C2E;
+    --bg-input: #2C2C2E;
+    --separator: rgba(84, 84, 88, 0.6);
+
+    /* Text Colors */
+    --text-primary: #FFFFFF;
+    --text-secondary: rgba(235, 235, 245, 0.6);
+    --text-tertiary: rgba(235, 235, 245, 0.3);
+
+    /* Accent Colors stay the same in dark mode */
+    --accent-light: rgba(10, 132, 255, 0.15);
+
+    /* Semantic Colors - slightly adjusted for dark mode */
+    --success-light: rgba(52, 199, 89, 0.15);
+    --warning-light: rgba(255, 159, 10, 0.15);
+    --error-light: rgba(255, 69, 58, 0.15);
+
+    /* Shadows - more subtle in dark mode */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -19,76 +90,137 @@
   padding: 0;
 }
 
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
   min-height: 100dvh;
-  line-height: 1.5;
+  line-height: 1.47;
+  font-size: 17px;
+  letter-spacing: -0.022em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* ============================================
+   App Container
+   ============================================ */
 
 .app-container {
   max-width: 480px;
   margin: 0 auto;
-  padding: var(--spacing);
-  padding-bottom: env(safe-area-inset-bottom, var(--spacing));
-  padding-bottom: max(env(safe-area-inset-bottom), var(--spacing));
+  padding: var(--spacing-lg);
+  padding-top: var(--spacing-xl);
+  padding-bottom: max(env(safe-area-inset-bottom), var(--spacing-lg));
 }
+
+/* ============================================
+   Header
+   ============================================ */
 
 header {
   text-align: center;
   padding: var(--spacing) 0;
-  margin-bottom: var(--spacing);
+  margin-bottom: var(--spacing-lg);
 }
 
 h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
   color: var(--text-primary);
 }
 
 h2 {
-  font-size: 1.125rem;
-  font-weight: 500;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   color: var(--text-primary);
   margin-bottom: var(--spacing);
 }
 
+/* ============================================
+   Views & Transitions
+   ============================================ */
+
 .view {
   display: none;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
 }
 
 .view.active {
   display: block;
+  opacity: 1;
+  transform: translateY(0);
+  animation: fadeIn var(--transition-normal);
 }
 
 .view.hidden {
   display: none;
 }
 
-.photo-section {
-  margin-bottom: var(--spacing);
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.photo-section label {
+/* ============================================
+   Photo Upload Section
+   ============================================ */
+
+.photo-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.photo-section > label:first-of-type {
   display: block;
-  margin-bottom: 0.5rem;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--text-secondary);
-  font-size: 0.875rem;
+  margin-bottom: var(--spacing-xs);
+  padding-left: var(--spacing);
+}
+
+.photo-section > p {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-bottom: var(--spacing-sm);
+  padding-left: var(--spacing);
 }
 
 .photo-input {
   position: relative;
-  border: 2px dashed var(--text-secondary);
-  border-radius: var(--border-radius);
+  display: block;
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius-lg);
   overflow: hidden;
   cursor: pointer;
-  transition: border-color 0.2s ease;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  box-shadow: var(--shadow-sm);
 }
 
-.photo-input:has(input:focus) {
-  border-color: var(--accent);
+.photo-input:active {
+  transform: scale(0.98);
+}
+
+.photo-input.has-images {
+  box-shadow: var(--shadow-md);
 }
 
 .photo-input input {
@@ -105,18 +237,41 @@ h2 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem var(--spacing);
+  padding: 48px var(--spacing-lg);
   color: var(--text-secondary);
 }
 
 .photo-placeholder .icon {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+  font-size: 48px;
+  margin-bottom: var(--spacing-sm);
+  filter: grayscale(0.2);
 }
 
 .photo-placeholder span:last-child {
-  font-size: 0.875rem;
-  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* Photo Previews Container */
+#previews {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.preview-container {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  transition: transform var(--transition-fast);
+}
+
+.preview-container:active {
+  transform: scale(0.95);
 }
 
 .preview {
@@ -124,40 +279,79 @@ h2 {
   height: 100%;
   object-fit: cover;
   display: block;
-  position: relative;
-  z-index: 2;
 }
 
-.preview.hidden {
-  display: none;
+.preview-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: background var(--transition-fast);
 }
+
+.preview-remove:active {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* ============================================
+   iOS-Style Buttons
+   ============================================ */
 
 .btn {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  padding: 0.875rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 500;
+  padding: var(--spacing) var(--spacing-lg);
+  font-size: 17px;
+  font-weight: 600;
   text-align: center;
   border: none;
   border-radius: var(--border-radius);
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-  min-height: 44px;
+  min-height: 50px;
+  transition: transform var(--transition-fast), background-color var(--transition-fast), opacity var(--transition-fast);
+  position: relative;
+  overflow: hidden;
 }
 
-.btn:active {
-  transform: scale(0.98);
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.btn:active::after {
+  opacity: 0.1;
 }
 
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 0.35;
   cursor: not-allowed;
+}
+
+.btn:disabled::after {
+  display: none;
 }
 
 .btn-primary {
   background-color: var(--accent);
-  color: var(--text-primary);
+  color: #FFFFFF;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -165,23 +359,39 @@ h2 {
 }
 
 .btn-secondary {
-  background-color: var(--bg-input);
-  color: var(--text-primary);
-  margin-top: 0.75rem;
+  background-color: var(--bg-tertiary);
+  color: var(--accent);
+  margin-top: var(--spacing-sm);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #1a4a70;
+  background-color: var(--separator);
+}
+
+/* ============================================
+   Processing View
+   ============================================ */
+
+#view-processing {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+#view-processing.active {
+  display: flex;
 }
 
 .spinner {
-  width: 48px;
-  height: 48px;
-  margin: 2rem auto;
-  border: 4px solid var(--bg-input);
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--separator);
   border-top-color: var(--accent);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: var(--spacing-lg);
 }
 
 @keyframes spin {
@@ -193,20 +403,50 @@ h2 {
 #view-processing p {
   text-align: center;
   color: var(--text-secondary);
+  font-size: 15px;
 }
+
+/* ============================================
+   Data Sections (iOS Grouped Style)
+   ============================================ */
 
 .data-section {
   background-color: var(--bg-secondary);
-  border-radius: var(--border-radius);
-  padding: var(--spacing);
-  margin-bottom: var(--spacing);
+  border-radius: var(--border-radius-lg);
+  padding: 0;
+  margin-bottom: var(--spacing-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
+.data-section h2 {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  padding: var(--spacing) var(--spacing-lg);
+  padding-bottom: var(--spacing-xs);
+  margin-bottom: 0;
+  background: var(--bg-primary);
+}
+
+.data-section .confidence-indicator {
+  margin: 0 var(--spacing-lg) var(--spacing-sm);
+}
+
+.data-section > .field-group:first-of-type {
+  border-top: none;
+}
+
+/* ============================================
+   Confidence Indicators
+   ============================================ */
+
 .confidence-indicator {
-  height: 4px;
-  border-radius: 2px;
-  background-color: var(--bg-input);
-  margin-bottom: var(--spacing);
+  height: 3px;
+  border-radius: 1.5px;
+  background-color: var(--separator);
   overflow: hidden;
 }
 
@@ -216,7 +456,8 @@ h2 {
   height: 100%;
   width: var(--confidence-width, 0%);
   background-color: var(--warning);
-  transition: width 0.3s ease, background-color 0.3s ease;
+  border-radius: 1.5px;
+  transition: width var(--transition-normal), background-color var(--transition-normal);
 }
 
 .confidence-indicator.high::after {
@@ -231,104 +472,165 @@ h2 {
   background-color: var(--error);
 }
 
+/* ============================================
+   iOS-Style Form Fields
+   ============================================ */
+
 .field-group {
   position: relative;
-  margin-bottom: var(--spacing);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--bg-secondary);
+  border-top: 0.5px solid var(--separator);
 }
 
 .field-group:last-child {
-  margin-bottom: 0;
+  border-bottom: none;
 }
 
 .field-group label {
   display: block;
-  margin-bottom: 0.375rem;
+  font-size: 13px;
+  font-weight: 400;
   color: var(--text-secondary);
-  font-size: 0.875rem;
+  margin-bottom: 6px;
+  letter-spacing: -0.008em;
 }
 
 .field-group input {
   width: 100%;
-  padding: 0.75rem;
-  background-color: var(--bg-input);
-  border: 2px solid transparent;
-  border-radius: 8px;
+  padding: 10px 12px;
+  padding-right: 36px;
+  background-color: var(--bg-tertiary);
+  border: none;
+  border-radius: 10px;
   color: var(--text-primary);
-  font-size: 1rem;
-  transition: border-color 0.2s ease;
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.022em;
+  transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .field-group input:focus {
   outline: none;
-  border-color: var(--accent);
+  background-color: var(--bg-tertiary);
+  box-shadow: 0 0 0 3px var(--accent-light);
 }
 
 .field-group input::placeholder {
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
 }
 
+/* Hide number input spinners */
+.field-group input::-webkit-inner-spin-button,
+.field-group input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.field-group input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Confidence Dot */
 .confidence {
   position: absolute;
-  right: 0.75rem;
-  top: 2.25rem;
-  width: 12px;
-  height: 12px;
+  right: calc(var(--spacing-lg) + 12px);
+  bottom: 18px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background-color: var(--warning);
+  box-shadow: 0 0 0 2px var(--warning-light);
+  transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .confidence.high {
   background-color: var(--success);
+  box-shadow: 0 0 0 2px var(--success-light);
 }
 
 .confidence.medium {
   background-color: var(--warning);
+  box-shadow: 0 0 0 2px var(--warning-light);
 }
 
 .confidence.low {
   background-color: var(--error);
+  box-shadow: 0 0 0 2px var(--error-light);
 }
+
+/* ============================================
+   Error Banner (iOS Toast Style)
+   ============================================ */
 
 .error-banner {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: var(--error);
+  bottom: var(--spacing-lg);
+  left: var(--spacing);
+  right: var(--spacing);
+  max-width: 480px;
+  margin: 0 auto;
+  background-color: var(--bg-secondary);
   color: var(--text-primary);
-  padding: var(--spacing);
-  padding-bottom: max(env(safe-area-inset-bottom), var(--spacing));
+  padding: var(--spacing) var(--spacing-lg);
+  padding-right: var(--spacing);
+  border-radius: var(--border-radius-lg);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing);
   z-index: 100;
+  box-shadow: var(--shadow-lg);
+  border-left: 4px solid var(--error);
+  transform: translateY(100px);
+  opacity: 0;
+  transition: transform var(--transition-normal), opacity var(--transition-normal);
+}
+
+.error-banner:not(.hidden) {
+  transform: translateY(0);
+  opacity: 1;
 }
 
 .error-banner.hidden {
-  display: none;
+  transform: translateY(100px);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .error-banner #error-message {
   flex: 1;
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .close-btn {
-  background: none;
+  background: var(--error-light);
   border: none;
-  color: var(--text-primary);
-  font-size: 1.5rem;
+  color: var(--error);
+  font-size: 18px;
+  font-weight: 700;
   line-height: 1;
-  padding: 0;
-  width: 1.5rem;
-  height: 1.5rem;
+  padding: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+  flex-shrink: 0;
 }
 
-/* Screen-reader only - visually hidden but accessible for label triggers */
+.close-btn:active {
+  transform: scale(0.9);
+}
+
+/* ============================================
+   Screen-Reader Only
+   ============================================ */
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -341,12 +643,55 @@ h2 {
   border: 0;
 }
 
+/* ============================================
+   Safe Area Support
+   ============================================ */
+
 @supports (padding: max(0px)) {
   .app-container {
-    padding-bottom: max(env(safe-area-inset-bottom), var(--spacing));
+    padding-bottom: max(env(safe-area-inset-bottom), var(--spacing-lg));
   }
+}
 
-  .error-banner {
-    padding-bottom: max(env(safe-area-inset-bottom), var(--spacing));
+/* ============================================
+   Theme Color Meta Tag Support
+   ============================================ */
+
+/* This is handled via meta tag, but we can add smooth transitions */
+html {
+  transition: background-color var(--transition-normal);
+}
+
+body {
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+/* ============================================
+   Accessibility Improvements
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus visible for keyboard navigation */
+.btn:focus-visible,
+.field-group input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+  .error-banner,
+  .btn {
+    display: none;
   }
 }

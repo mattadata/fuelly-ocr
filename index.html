@@ -6,7 +6,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Fuelly">
-  <meta name="theme-color" content="#1a1a2e">
+  <!-- Dynamic theme color for light/dark mode -->
+  <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <title>Fuelly OCR</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -22,7 +24,7 @@
     <div id="view-capture" class="view active">
       <div class="photo-section">
         <label>Take Photos</label>
-        <p style="font-size: 13px; opacity: 0.8; margin-top: -8px;">Upload pump display and odometer (up to 2 photos)</p>
+        <p>Upload pump display and odometer (up to 2 photos)</p>
         <input type="file" id="photos-file" accept="image/*" multiple class="sr-only">
         <label for="photos-file" class="photo-input" id="photos-input">
           <div class="photo-placeholder">
@@ -30,7 +32,7 @@
             <span id="upload-label-text">Tap to select photos</span>
           </div>
         </label>
-        <div id="previews" style="display: flex; gap: 10px; margin-top: 10px;"></div>
+        <div id="previews"></div>
       </div>
 
       <button id="extract-btn" class="btn btn-primary" disabled>Extract Data</button>
@@ -50,19 +52,19 @@
 
         <div class="field-group">
           <label for="gallons">Gallons</label>
-          <input type="number" id="gallons" step="0.01" min="0" max="100">
+          <input type="number" id="gallons" step="0.01" min="0" max="100" placeholder="0.00">
           <span class="confidence" id="gallons-confidence"></span>
         </div>
 
         <div class="field-group">
           <label for="price">Price per Gallon ($)</label>
-          <input type="number" id="price" step="0.001" min="0" max="10">
+          <input type="number" id="price" step="0.001" min="0" max="10" placeholder="0.000">
           <span class="confidence" id="price-confidence"></span>
         </div>
 
         <div class="field-group">
           <label for="total">Total ($)</label>
-          <input type="number" id="total" step="0.01" min="0" max="500">
+          <input type="number" id="total" step="0.01" min="0" max="500" placeholder="0.00">
           <span class="confidence" id="total-confidence"></span>
         </div>
       </div>
@@ -73,7 +75,7 @@
 
         <div class="field-group">
           <label for="miles">Miles</label>
-          <input type="number" id="miles" step="1" min="0">
+          <input type="number" id="miles" step="1" min="0" placeholder="0">
           <span class="confidence" id="miles-confidence"></span>
         </div>
       </div>

@@ -185,20 +185,20 @@ const App = (function() {
         console.log('File loaded:', file.name, 'data length:', event.target.result?.length);
 
         try {
-          // Create preview element
+          // Create preview element with CSS classes
           const previewDiv = document.createElement('div');
-          previewDiv.style.cssText = 'position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; background: #2a2a3e;';
+          previewDiv.className = 'preview-container';
 
           const img = document.createElement('img');
           img.src = event.target.result;
-          img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+          img.className = 'preview';
           previewDiv.appendChild(img);
 
-          // Add remove button
+          // Add remove button with CSS class
           const removeBtn = document.createElement('button');
           removeBtn.innerHTML = '×';
           removeBtn.type = 'button';
-          removeBtn.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 16px; cursor: pointer;';
+          removeBtn.className = 'preview-remove';
           removeBtn.onclick = function() {
             removePhoto(actualIndex);
           };
@@ -267,17 +267,19 @@ const App = (function() {
     state.uploadedFiles.forEach((file, newIndex) => {
       const reader = new FileReader();
       reader.onload = function(event) {
+        // Create preview element with CSS classes
         const previewDiv = document.createElement('div');
-        previewDiv.style.cssText = 'position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; background: #2a2a3e;';
+        previewDiv.className = 'preview-container';
 
         const img = document.createElement('img');
         img.src = event.target.result;
-        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+        img.className = 'preview';
         previewDiv.appendChild(img);
 
         const removeBtn = document.createElement('button');
         removeBtn.innerHTML = '×';
-        removeBtn.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 16px; cursor: pointer;';
+        removeBtn.type = 'button';
+        removeBtn.className = 'preview-remove';
         removeBtn.onclick = function() {
           removePhoto(newIndex);
         };
